@@ -55,6 +55,12 @@ letter	[a-zA-Z]
 line	[\n]+
 space	[ \r\t]*
 
+/* 
+ * Name convension is the same as in cool-support/include/cool-parse.h
+ */
+TYPEID 		[A-Z]({letter}|{digit}|_)*
+OBJECTID 	[A-Z]({letter}|{digit}|_)*
+INT_CONST 	{digit}+
 /* Such usage can only be found in "info flex" but not any tutorial online
  * Whoever maintaining this manual just made a big mistake. 
  * All the keywords has been listed in CoolAid Page 15.
@@ -104,7 +110,7 @@ TRUE 		(t?i:rue)
   *     with the correct line number
   */
 
-
+"\n"			{ curr_lineno++; }
 {CLASS} 		{ return CLASS; }
 {ELSE} 			{ return ELSE; }
 {FI} 			{ return FI;}
@@ -122,4 +128,18 @@ TRUE 		(t?i:rue)
 {NEW} 			{ return NEW; }
 {OF} 			{ return OF; }
 {NOT} 			{ return NOT; }
+
+{OBJECTID}    { 
+  cool_yylval.symbol = idtable.add_string(yytext); 
+  return OBJECTID; 
+}
+{TYPEID}    { 
+  cool_yylval.symbol = idtable.add_string(yytext); 
+  return TYPEID; 
+}
+{INT_CONST}    { 
+  cool_yylval.symbol = inttable.add_string(yytext); 
+  return INT_CONST; 
+}
+
 %%
