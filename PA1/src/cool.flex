@@ -29,7 +29,7 @@ extern FILE *fin; /* we read from this file */
 #undef YY_INPUT
 #define YY_INPUT(buf,result,max_size) \
   if ( (result = fread( (char*)buf, sizeof(char), max_size, fin)) < 0) \
-    YY_FATAL_ERROR( "read() in flex scanner failed");
+	YY_FATAL_ERROR( "read() in flex scanner failed");
 
 char string_buf[MAX_STR_CONST]; /* to assemble string constants */
 char *string_buf_ptr;
@@ -42,6 +42,9 @@ extern YYSTYPE cool_yylval;
  *  Add Your own definitions here
  */
 
+/* Used to count parenthesis */
+int par_cnt_ = 0;
+
 %}
 
 %option noyywrap
@@ -50,40 +53,40 @@ extern YYSTYPE cool_yylval;
  * Define names for regular expressions here.
  */
 
-digit	[0-9]
-letter	[a-zA-Z]
-line	[\n]+
-space	[ \r\t]*
+digit 	[0-9]
+letter 	[a-zA-Z]
+space 	[ \f\r\t\v]
 
 /* 
  * Name convension is the same as in cool-support/include/cool-parse.h
  */
 TYPEID 		[A-Z]({letter}|{digit}|_)*
-OBJECTID 	[A-Z]({letter}|{digit}|_)*
+OBJECTID 	[a-z]({letter}|{digit}|_)*
 INT_CONST 	{digit}+
+
 /* Such usage can only be found in "info flex" but not any tutorial online
  * Whoever maintaining this manual just made a big mistake. 
  * All the keywords has been listed in CoolAid Page 15.
  * Don't use lower case labels, as it collides with C++'s keyword, which
  * stops the code from compiling.
  */
-CLASS   	(?i:class)
-ELSE    	(?i:else)
-FI      	(?i:fi)
-IF      	(?i:if)
-IN      	(?i:in)
+CLASS 		(?i:class)
+ELSE 		(?i:else)
+FI 			(?i:fi)
+IF 			(?i:if)
+IN 			(?i:in)
 INHERITS	(?i:inherits)
-ISVOID  	(?i:isvoid)
-LET     	(?i:let)
-LOOP    	(?i:loop)
-POOL    	(?i:pool)
-THEN    	(?i:then)
-WHILE   	(?i:while)
-CASE    	(?i:case)
-ESAC    	(?i:esac)
-NEW     	(?i:new)
-OF      	(?i:of)
-NOT     	(?i:not)
+ISVOID 		(?i:isvoid)
+LET 		(?i:let)
+LOOP 		(?i:loop)
+POOL 		(?i:pool)
+THEN 		(?i:then)
+WHILE 		(?i:while)
+CASE 		(?i:case)
+ESAC 		(?i:esac)
+NEW 		(?i:new)
+OF 			(?i:of)
+NOT 		(?i:not)
 
 /* Do notice that all keywords are case insensitive but true and false, 
  * who must have the leading character being lower case, which, if I am
@@ -110,7 +113,30 @@ TRUE 		(t?i:rue)
   *     with the correct line number
   */
 
-"\n"			{ curr_lineno++; }
+"\n"			{ curr_lineno++;}
+{space}			{ ; } 					// Just ignore spaces in all forms.
+
+"=>" 			{ return DARROW; }
+"<=" 			{ return LE; }
+"<-" 			{ return ASSIGN; }
+"<" 			{ return (int) '<'; }
+"." 			{ return (int) '.'; }
+"@" 			{ return (int) '@'; }
+"~" 			{ return (int) '~'; }
+"*" 			{ return (int) '*'; }
+"/" 			{ return (int) '/'; }
+"+" 			{ return (int) '+'; }
+"-" 			{ return (int) '-'; }
+":" 			{ return (int) ':'; }
+";" 			{ return (int) ';'; }
+"{" 			{ return (int) '{'; }
+"}" 			{ return (int) '}'; }
+"(" 			{ return (int) '('; }
+")" 			{ return (int) ')'; }
+"=" 			{ return (int) '='; }
+"," 			{ return (int) ','; }
+
+
 {CLASS} 		{ return CLASS; }
 {ELSE} 			{ return ELSE; }
 {FI} 			{ return FI;}
@@ -129,17 +155,28 @@ TRUE 		(t?i:rue)
 {OF} 			{ return OF; }
 {NOT} 			{ return NOT; }
 
-{OBJECTID}    { 
-  cool_yylval.symbol = idtable.add_string(yytext); 
-  return OBJECTID; 
-}
-{TYPEID}    { 
-  cool_yylval.symbol = idtable.add_string(yytext); 
-  return TYPEID; 
-}
-{INT_CONST}    { 
+
+ /* Check utilities.cc line 176~191 */
+{INT_CONST} 	{ 
   cool_yylval.symbol = inttable.add_string(yytext); 
   return INT_CONST; 
 }
+{TRUE} 			{
+	cool_yylval.boolean = true;
+	return BOOL_CONST;
+}
+{FALSE} 		{
+	cool_yylval.boolean = false;
+	return BOOL_CONST;
+}
+{OBJECTID} 		{ 
+	cool_yylval.symbol = idtable.add_string(yytext); 
+	return OBJECTID; 
+}
+{TYPEID} 		{ 
+	cool_yylval.symbol = idtable.add_string(yytext); 
+	return TYPEID; 
+}
+
 
 %%
