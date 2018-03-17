@@ -45,6 +45,7 @@ extern YYSTYPE cool_yylval;
 /* Used to count parenthesis */
 int par_cnt_ = 0;
 
+
 %}
 
 %option noyywrap
@@ -55,7 +56,7 @@ int par_cnt_ = 0;
 
 digit 	[0-9]
 letter 	[a-zA-Z]
-space 	[ \f\r\t\v]
+space 	[ \f\r\t\v]+
 
 /* 
  * Name convension is the same as in cool-support/include/cool-parse.h
@@ -92,8 +93,14 @@ NOT 		(?i:not)
  * who must have the leading character being lower case, which, if I am
  * the one to judge, is stupid.
  */
-FALSE 		(f?i:alse)
-TRUE 		(t?i:rue)
+/*
+ * Two days later, I realized that should it start with a capital letter,
+ * it would become a object name.
+ */
+FALSE 		[f](?i:alse)
+TRUE 		[t](?i:rue)
+
+%x COMMENT
 
 
 %%
@@ -113,6 +120,34 @@ TRUE 		(t?i:rue)
   *     with the correct line number
   */
 
+ /* 
+  *Let's deal with comments first.
+  */
+
+"--".*"\n" 		{ curr_lineno++; }
+"(*"			{
+	par_cnt_ ++;
+	BEGIN(COMMENT);
+}
+
+<COMMENT>"(*" 	{
+	par_cnt_ ++;
+}
+<COMMENT>"*)" 	{
+	par_cnt_--;
+	if (!par_cnt_){
+		BEGIN(INITIAL);
+	}
+}
+<COMMENT>"\n" 	{ curr_lineno++; }
+<COMMENT><<EOF>>{
+	BEGIN(INITIAL);
+	cool_yylval.error_msg = "EOF in comment";
+	return ERROR;
+}
+<COMMENT>. 		{ ; } // Comments, don't know, don't care.
+
+ /* Dealing with space and emptylines here. */
 "\n"			{ curr_lineno++;}
 {space}			{ ; } 					// Just ignore spaces in all forms.
 

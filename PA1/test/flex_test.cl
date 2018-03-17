@@ -76,7 +76,11 @@ class CellularAutomaton inherits IO {
 };
 
 class Main {
-    cells : CellularAutomaton;
+
+    ----- Test Comment
+    --
+
+    cells : CellularAutomaton;  --  -- --  -------------
    
     main() : SELF_TYPE {
         {
@@ -90,7 +94,7 @@ class Main {
                         countdown <- countdown - 1;
                     
                 pool
-            );  (* end let countdown *)
+            );  (* end let countdown
             self;
         }
     };
