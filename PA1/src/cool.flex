@@ -101,7 +101,7 @@ FALSE 		[f](?i:alse)
 TRUE 		[t](?i:rue)
 
 %x COMMENT
-
+%x STRING
 
 %%
 
@@ -140,16 +140,37 @@ TRUE 		[t](?i:rue)
 	}
 }
 <COMMENT>"\n" 	{ curr_lineno++; }
-<COMMENT><<EOF>>{
+<COMMENT><<EOF>> 	{
 	BEGIN(INITIAL);
 	cool_yylval.error_msg = "EOF in comment";
 	return ERROR;
 }
+
 <COMMENT>. 		{ ; } // Comments, don't know, don't care.
 
  /* Dealing with space and emptylines here. */
 "\n"			{ curr_lineno++;}
 {space}			{ ; } 					// Just ignore spaces in all forms.
+
+ /* Let's deal with strings! */
+
+<INITIAL>"\"" 			{
+	BEGIN(STRING);
+}
+
+<STRING>"\"" 	{
+	BEGIN(INITIAL);
+	// *string_buf_ptr = '\0'; 
+	// This is problematic. Try memset.
+	cool_yylval.symbol = stringtable.add_string(string_buf);
+	string_buf_ptr = &string_buf[0];
+	return STR_CONST;
+}
+
+<STRING>. 		{
+	*string_buf_ptr = *yytext;
+	string_buf_ptr ++;
+}
 
 "=>" 			{ return DARROW; }
 "<=" 			{ return LE; }

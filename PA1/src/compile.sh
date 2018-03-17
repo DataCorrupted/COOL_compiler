@@ -1,3 +1,2 @@
-flex cool.flex
 make
-rm lexer
+rm *.o *.cc
