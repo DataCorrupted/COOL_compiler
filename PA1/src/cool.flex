@@ -44,8 +44,12 @@ extern YYSTYPE cool_yylval;
 
 /* Used to count parenthesis */
 int par_cnt_ = 0;
+bool string_err = false;
 
-
+int len = 0;
+bool isTooLong(){
+	return (string_buf_ptr - string_buf) + 1 > MAX_STR_CONST;
+}
 %}
 
 %option noyywrap
@@ -148,29 +152,80 @@ TRUE 		[t](?i:rue)
 
 <COMMENT>. 		{ ; } // Comments, don't know, don't care.
 
- /* Dealing with space and emptylines here. */
-"\n"			{ curr_lineno++;}
-{space}			{ ; } 					// Just ignore spaces in all forms.
-
  /* Let's deal with strings! */
 
-<INITIAL>"\"" 			{
+<INITIAL>"\"" 	{
 	BEGIN(STRING);
+	string_err = false;
+	// The buffer has to be reset.
+	memset(string_buf, 0, MAX_STR_CONST);
+	// The pointer should also be pointing to the first element.
+	string_buf_ptr = string_buf;
+
+}
+
+<STRING>"\0"	{
+	cool_yylval.error_msg = "String contains null character";
+	string_err = true;
+}
+<STRING><<EOF>> {
+	cool_yylval.error_msg = "EOF in string control";
+	string_err = true;
+	return ERROR;	
+}
+
+<STRING>"\\\n" 	{
+	if (!isTooLong()){
+		*string_buf_ptr = '\n';
+		string_buf_ptr ++;
+		curr_lineno++;
+	} else {
+		cool_yylval.error_msg = "String constant too long";
+		string_err = true;
+		return ERROR;
+	}
+}
+
+<STRING>"\\"[btnf] 	{
+	if (!isTooLong()){
+		char c = yytext[1];
+		if 		  (c == 'n') {	*string_buf_ptr = '\n'; } 
+		  else if (c == 't') { 	*string_buf_ptr = '\t';	}
+		  else if (c == 'b') { 	*string_buf_ptr = '\b'; }
+		  else if (c == 'f') { 	*string_buf_ptr = '\f'; }
+		string_buf_ptr ++;
+	} else {
+		cool_yylval.error_msg = "String constant too long";
+		string_err = true;
+		return ERROR;		
+	}
 }
 
 <STRING>"\"" 	{
 	BEGIN(INITIAL);
-	// *string_buf_ptr = '\0'; 
-	// This is problematic. Try memset.
-	cool_yylval.symbol = stringtable.add_string(string_buf);
-	string_buf_ptr = &string_buf[0];
-	return STR_CONST;
+	if (!string_err){
+		cool_yylval.symbol = stringtable.add_string(string_buf);
+		return STR_CONST;
+	} else {
+		return ERROR;
+	}
 }
 
 <STRING>. 		{
-	*string_buf_ptr = *yytext;
-	string_buf_ptr ++;
+	if (!isTooLong()){
+		*string_buf_ptr = *yytext;
+		string_buf_ptr ++;
+	} else {
+		cool_yylval.error_msg = "String constant too long";
+		string_err = true;
+		return ERROR;		
+	}
 }
+
+ /* Dealing with space and emptylines here. */
+"\n"			{ curr_lineno++;}
+{space}			{ ; } 					// Just ignore spaces in all forms.
+
 
 "=>" 			{ return DARROW; }
 "<=" 			{ return LE; }
