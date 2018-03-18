@@ -124,11 +124,10 @@ TYPEID 		[A-Z]({letter}|{digit}|_)*
 OBJECTID 	[a-z]({letter}|{digit}|_)*
 INT_CONST 	{digit}+
 
-/* Such usage(?i:) can only be found in "info flex" but not any tutorial online
+/*
+ * Such usage(?i:) can only be found in "info flex" but not any tutorial online
  * Whoever maintaining this manual just made a big mistake. 
  * All the keywords has been listed in CoolAid Page 15.
- * Don't use lower case labels, as it collides with C++'s keyword, which
- * stops the code from compiling.
  */
 CLASS 		(?i:class)
 ELSE 		(?i:else)
@@ -185,6 +184,13 @@ TRUE 		[t](?i:rue)
 
  /* Line comments */
 "--".*"\n" 		{ curr_lineno++; }
+ /*
+  * This rule is tricky. But think about it, what can happen if there is one
+  * line comment without '\n'? The answer is that the lexer has reached the 
+  * end of the file. Thus no action is required. just pass.
+  */
+"--".*		 	{ ; }
+
 "(*"			{
 	par_cnt_ ++;
 	BEGIN(COMMENT);
@@ -192,9 +198,8 @@ TRUE 		[t](?i:rue)
 <COMMENT>"(*" 	{ par_cnt_ ++; }
 <COMMENT>"*)" 	{
 	par_cnt_--;
-	if (!par_cnt_){
-		BEGIN(INITIAL);
-	}
+	// 0 means that all (* and *) has been matched.
+	if (!par_cnt_){	BEGIN(INITIAL);	}
 }
 <COMMENT>"\n" 	{ curr_lineno++; }
 <COMMENT><<EOF>> 	{
@@ -249,6 +254,7 @@ TRUE 		[t](?i:rue)
 		return ERROR;
 	}
 }
+ /* This should be put last or the end will never be matched. */
 <STRING>. 		{ addChar(*yytext); }
 
  /* 

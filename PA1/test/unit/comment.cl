@@ -8,4 +8,6 @@ true
  *)
  true
 -------------------------- This is split line ---------------------------
-(* This should produce an error.
+(* This should produce an error. *)
+Main
+-- This is a comment without \n
