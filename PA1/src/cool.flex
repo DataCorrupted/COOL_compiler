@@ -65,7 +65,6 @@ const char* reportErr(const int record){
 	}
 }
 
-
 void addChar(const char c){
 	*string_buf_ptr = c;
 	/* Use a circular pointer to make sure that the pointer
@@ -192,7 +191,7 @@ TRUE 		[t](?i:rue)
 
 <INITIAL>"\"" 	{
 	BEGIN(STRING);
-	string_err = 0;
+	string_err = 0x0000;
 	// The buffer has to be reset.
 	memset(string_buf, 0, MAX_STR_CONST);
 	// The pointer should also be pointing to the first element.
@@ -286,12 +285,8 @@ TRUE 		[t](?i:rue)
   cool_yylval.symbol = inttable.add_string(yytext); 
   return INT_CONST; 
 }
-{TRUE} 			{
-	cool_yylval.boolean = true;
-	return BOOL_CONST;
-}
-{FALSE} 		{
-	cool_yylval.boolean = false;
+{TRUE}|{FALSE} 	{
+	cool_yylval.boolean = (yytext[0] == 't');
 	return BOOL_CONST;
 }
 {OBJECTID} 		{ 
