@@ -1,3 +1,4 @@
 *.pdf
 tools-bin/*
 lex.yy.c
+*lexer*
