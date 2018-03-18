@@ -1,3 +1,4 @@
+cd ..
 ./compile.sh
 clear
 ./lexer $1 >O1
