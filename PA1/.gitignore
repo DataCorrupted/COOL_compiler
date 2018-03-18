@@ -2,4 +2,4 @@
 tools-bin/*
 lex.yy.c
 *lexer*
-O*
+*O*
