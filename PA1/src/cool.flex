@@ -60,7 +60,10 @@ const char* reportErr(const int record){
 	} else if (record & TOOLONG){
 		return "String constant too long";
 	} else {
-		/* Have to return something, make Rust happy. :) */
+		/* 
+		 * Have to return something, make Rust happy. :) 
+		 * No error, I'm happy too :)
+		 */
 		return "";
 	}
 }
@@ -191,6 +194,7 @@ TRUE 		[t](?i:rue)
 
 <INITIAL>"\"" 	{
 	BEGIN(STRING);
+	// So far, no error.
 	string_err = 0x0000;
 	// The buffer has to be reset.
 	memset(string_buf, 0, MAX_STR_CONST);
@@ -212,8 +216,8 @@ TRUE 		[t](?i:rue)
 
 <STRING>"\0"	{ recordErr(string_err, NULCHAR); }
 <STRING>"\\"[btnf\n] 	{
-	char c = yytext[1];
-	if 		  (c == 'n') { addChar('\n'); } 
+	const char c = yytext[1];
+	if        (c == 'n') { addChar('\n'); } 
 	  else if (c == 't') { addChar('\t'); }
 	  else if (c == 'b') { addChar('\b'); }
 	  else if (c == 'f') { addChar('\f'); }
@@ -224,11 +228,12 @@ TRUE 		[t](?i:rue)
 
 <STRING>"\"" 	{
 	BEGIN(INITIAL);
-	if (!string_err){
+	const char* e = reportErr(string_err);
+	if (strlen(e) == 0){
 		cool_yylval.symbol = stringtable.add_string(string_buf);
 		return STR_CONST;
 	} else {
-		cool_yylval.error_msg = reportErr(string_err);
+		cool_yylval.error_msg = e;
 		return ERROR;
 	}
 }
