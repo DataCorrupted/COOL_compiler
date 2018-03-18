@@ -35,6 +35,7 @@ char string_buf[MAX_STR_CONST]; /* to assemble string constants */
 char *string_buf_ptr;
 
 extern int curr_lineno;
+extern int verbose_flag;
 
 extern YYSTYPE cool_yylval;
 
@@ -44,12 +45,47 @@ extern YYSTYPE cool_yylval;
 
 /* Used to count parenthesis */
 int par_cnt_ = 0;
-bool string_err = false;
+unsigned int string_err = 0;
 
-int len = 0;
-bool isTooLong(){
-	return (string_buf_ptr - string_buf) + 1 > MAX_STR_CONST;
+#define NULCHAR 0x0001
+#define TOOLONG 0x0002
+
+void recordErr(unsigned int& record, const int err){
+	record = record | err;
 }
+
+const char* reportErr(const int record){
+	if (record & NULCHAR) {
+		return "String contains null character.";
+	} else if (record & TOOLONG){
+		return "String constant too long";
+	} else {
+		/* Have to return something, make Rust happy. :) */
+		return "";
+	}
+}
+
+
+void addChar(const char c){
+	*string_buf_ptr = c;
+	/* Use a circular pointer to make sure that the pointer
+	 * stays in the buffer. Don't care if it's overriding
+	 * past data, since it is already a "Too long string"
+	 * error when it happens. All we have to do by then is
+	 * to make sure that there is no buffer overflow and we
+	 * record this error successfully.
+	 * All in all, the abstraction is that, the programmer,
+	 * aka, me, can add a pointer without worrying about
+	 * overflow or too long string.
+	 */
+	if (string_buf_ptr - string_buf <= MAX_STR_CONST - 1){
+		string_buf_ptr ++;
+	} else {
+		string_buf_ptr = string_buf;
+		recordErr(string_err, TOOLONG);
+	}
+}
+
 %}
 
 %option noyywrap
@@ -127,7 +163,7 @@ TRUE 		[t](?i:rue)
  /* 
   *Let's deal with comments first.
   */
-
+ /* Line comments */
 "--".*"\n" 		{ curr_lineno++; }
 "(*"			{
 	par_cnt_ ++;
@@ -156,50 +192,36 @@ TRUE 		[t](?i:rue)
 
 <INITIAL>"\"" 	{
 	BEGIN(STRING);
-	string_err = false;
+	string_err = 0;
 	// The buffer has to be reset.
 	memset(string_buf, 0, MAX_STR_CONST);
 	// The pointer should also be pointing to the first element.
 	string_buf_ptr = string_buf;
 
 }
-
-<STRING>"\0"	{
-	cool_yylval.error_msg = "String contains null character";
-	string_err = true;
-}
 <STRING><<EOF>> {
-	cool_yylval.error_msg = "EOF in string control";
-	string_err = true;
+	cool_yylval.error_msg = "EOF in string constant";
+	BEGIN(INITIAL);
 	return ERROR;	
 }
-
-<STRING>"\\\n" 	{
-	if (!isTooLong()){
-		*string_buf_ptr = '\n';
-		string_buf_ptr ++;
-		curr_lineno++;
-	} else {
-		cool_yylval.error_msg = "String constant too long";
-		string_err = true;
-		return ERROR;
-	}
+<STRING>"\n" 	{
+	cool_yylval.error_msg = "Unterminated string constant";
+	curr_lineno ++;
+	BEGIN(INITIAL);
+	return ERROR;
 }
 
-<STRING>"\\"[btnf] 	{
-	if (!isTooLong()){
-		char c = yytext[1];
-		if 		  (c == 'n') {	*string_buf_ptr = '\n'; } 
-		  else if (c == 't') { 	*string_buf_ptr = '\t';	}
-		  else if (c == 'b') { 	*string_buf_ptr = '\b'; }
-		  else if (c == 'f') { 	*string_buf_ptr = '\f'; }
-		string_buf_ptr ++;
-	} else {
-		cool_yylval.error_msg = "String constant too long";
-		string_err = true;
-		return ERROR;		
-	}
+<STRING>"\0"	{ recordErr(string_err, NULCHAR); }
+<STRING>"\\"[btnf\n] 	{
+	char c = yytext[1];
+	if 		  (c == 'n') { addChar('\n'); } 
+	  else if (c == 't') { addChar('\t'); }
+	  else if (c == 'b') { addChar('\b'); }
+	  else if (c == 'f') { addChar('\f'); }
+	  else if (c == '\n') { addChar('\n'); curr_lineno ++;}
 }
+
+<STRING>"\\"[^btnf\n] 	{ addChar(yytext[1]); }
 
 <STRING>"\"" 	{
 	BEGIN(INITIAL);
@@ -207,26 +229,18 @@ TRUE 		[t](?i:rue)
 		cool_yylval.symbol = stringtable.add_string(string_buf);
 		return STR_CONST;
 	} else {
+		cool_yylval.error_msg = reportErr(string_err);
 		return ERROR;
 	}
 }
 
-<STRING>. 		{
-	if (!isTooLong()){
-		*string_buf_ptr = *yytext;
-		string_buf_ptr ++;
-	} else {
-		cool_yylval.error_msg = "String constant too long";
-		string_err = true;
-		return ERROR;		
-	}
-}
+<STRING>. 		{ addChar(*yytext); }
 
  /* Dealing with space and emptylines here. */
 "\n"			{ curr_lineno++;}
 {space}			{ ; } 					// Just ignore spaces in all forms.
 
-
+ /* Key words. */
 "=>" 			{ return DARROW; }
 "<=" 			{ return LE; }
 "<-" 			{ return ASSIGN; }
@@ -289,5 +303,12 @@ TRUE 		[t](?i:rue)
 	return TYPEID; 
 }
 
+ /*
+  * Whatever leftover should be an error.
+  */
+. 				{
+	cool_yylval.error_msg = yytext;
+	return ERROR;
+}
 
 %%
