@@ -35,7 +35,7 @@ programming language.
 
 	io.cl		Shows how to use the IO class. (input/output)
 	
- 	hairyscary.cl	Exercises many of the obscure features of the
+	hairyscary.cl	Exercises many of the obscure features of the
 			language in obscure ways.			
 
 	hello_world.cl  The classic first program.
