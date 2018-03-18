@@ -43,16 +43,23 @@ extern YYSTYPE cool_yylval;
  *  Add Your own definitions here
  */
 
-/* Used to count parenthesis */
+/* 
+ * Used to count parenthesis. 
+ * Should it be 0, they matches and the comment ends.
+ */
 int par_cnt_ = 0;
-unsigned int string_err = 0;
+/*
+ * A error recorder using bit operation to record multiple errors
+ * if there are that much error. 
+ * In total there are two types of error and they are defined below.
+ * At first it is intended to record all errors, but soon I realized
+ * that EOF and \n error need not to be recorded but can be returned
+ * directly. But the variable remained as I find the idea fascinating. 
+ */
+unsigned int string_err = 0x0000;
 
 #define NULCHAR 0x0001
 #define TOOLONG 0x0002
-
-void recordErr(unsigned int& record, const int err){
-	record = record | err;
-}
 
 const char* reportErr(const int record){
 	if (record & NULCHAR) {
@@ -66,6 +73,10 @@ const char* reportErr(const int record){
 		 */
 		return "";
 	}
+}
+
+void recordErr(unsigned int& record, const int err){
+	record = record | err;
 }
 
 void addChar(const char c){
@@ -83,7 +94,13 @@ void addChar(const char c){
 	if (string_buf_ptr - string_buf <= MAX_STR_CONST - 1){
 		string_buf_ptr ++;
 	} else {
+		/* Reset the pointer to the head of the buffer. */
 		string_buf_ptr = string_buf;
+		/* 
+		 * Despite this function is only called once, I decided to
+		 * keep it here for it's easier to read.
+		 * Also, I don't like marco, it guarantees nothing.
+		 */
 		recordErr(string_err, TOOLONG);
 	}
 }
@@ -98,16 +115,16 @@ void addChar(const char c){
 
 digit 	[0-9]
 letter 	[a-zA-Z]
-space 	[ \f\r\t\v]+
 
 /* 
  * Name convension is the same as in cool-support/include/cool-parse.h
  */
+SPACE 		[ \f\r\t\v]+
 TYPEID 		[A-Z]({letter}|{digit}|_)*
 OBJECTID 	[a-z]({letter}|{digit}|_)*
 INT_CONST 	{digit}+
 
-/* Such usage can only be found in "info flex" but not any tutorial online
+/* Such usage(?i:) can only be found in "info flex" but not any tutorial online
  * Whoever maintaining this manual just made a big mistake. 
  * All the keywords has been listed in CoolAid Page 15.
  * Don't use lower case labels, as it collides with C++'s keyword, which
@@ -133,11 +150,11 @@ NOT 		(?i:not)
 
 /* Do notice that all keywords are case insensitive but true and false, 
  * who must have the leading character being lower case, which, if I am
- * the one to judge, is stupid.
+ * the one to judge, it is stupid.
  */
 /*
  * Two days later, I realized that should it start with a capital letter,
- * it would become a object name.
+ * it would become an object name.
  */
 FALSE 		[f](?i:alse)
 TRUE 		[t](?i:rue)
@@ -163,18 +180,16 @@ TRUE 		[t](?i:rue)
   */
 
  /* 
-  *Let's deal with comments first.
+  * Let's deal with comments first.
   */
+
  /* Line comments */
 "--".*"\n" 		{ curr_lineno++; }
 "(*"			{
 	par_cnt_ ++;
 	BEGIN(COMMENT);
 }
-
-<COMMENT>"(*" 	{
-	par_cnt_ ++;
-}
+<COMMENT>"(*" 	{ par_cnt_ ++; }
 <COMMENT>"*)" 	{
 	par_cnt_--;
 	if (!par_cnt_){
@@ -187,10 +202,11 @@ TRUE 		[t](?i:rue)
 	cool_yylval.error_msg = "EOF in comment";
 	return ERROR;
 }
-
 <COMMENT>. 		{ ; } // Comments, don't know, don't care.
 
- /* Let's deal with strings! */
+ /* 
+  * Let's deal with strings! 
+  */
 
 <INITIAL>"\"" 	{
 	BEGIN(STRING);
@@ -200,7 +216,6 @@ TRUE 		[t](?i:rue)
 	memset(string_buf, 0, MAX_STR_CONST);
 	// The pointer should also be pointing to the first element.
 	string_buf_ptr = string_buf;
-
 }
 <STRING><<EOF>> {
 	cool_yylval.error_msg = "EOF in string constant";
@@ -213,7 +228,6 @@ TRUE 		[t](?i:rue)
 	BEGIN(INITIAL);
 	return ERROR;
 }
-
 <STRING>"\0"	{ recordErr(string_err, NULCHAR); }
 <STRING>"\\"[btnf\n] 	{
 	const char c = yytext[1];
@@ -223,9 +237,7 @@ TRUE 		[t](?i:rue)
 	  else if (c == 'f') { addChar('\f'); }
 	  else if (c == '\n') { addChar('\n'); curr_lineno ++;}
 }
-
 <STRING>"\\"[^btnf\n] 	{ addChar(yytext[1]); }
-
 <STRING>"\"" 	{
 	BEGIN(INITIAL);
 	const char* e = reportErr(string_err);
@@ -237,12 +249,15 @@ TRUE 		[t](?i:rue)
 		return ERROR;
 	}
 }
-
 <STRING>. 		{ addChar(*yytext); }
 
- /* Dealing with space and emptylines here. */
+ /* 
+  * Dealing with space and empty lines here. 
+  */
+
 "\n"			{ curr_lineno++;}
-{space}			{ ; } 					// Just ignore spaces in all forms.
+ /* Just ignore spaces in all forms. */
+{SPACE}			{ ; } 	
 
  /* Key words. */
 "=>" 			{ return DARROW; }
@@ -264,8 +279,6 @@ TRUE 		[t](?i:rue)
 ")" 			{ return (int) ')'; }
 "=" 			{ return (int) '='; }
 "," 			{ return (int) ','; }
-
-
 {CLASS} 		{ return CLASS; }
 {ELSE} 			{ return ELSE; }
 {FI} 			{ return FI;}
@@ -283,8 +296,6 @@ TRUE 		[t](?i:rue)
 {NEW} 			{ return NEW; }
 {OF} 			{ return OF; }
 {NOT} 			{ return NOT; }
-
-
  /* Check utilities.cc line 176~191 */
 {INT_CONST} 	{ 
   cool_yylval.symbol = inttable.add_string(yytext); 
