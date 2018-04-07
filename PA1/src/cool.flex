@@ -304,8 +304,8 @@ TRUE 		[t](?i:rue)
 {NOT} 			{ return NOT; }
  /* Check utilities.cc line 176~191 */
 {INT_CONST} 	{ 
-  cool_yylval.symbol = inttable.add_string(yytext); 
-  return INT_CONST; 
+	cool_yylval.symbol = inttable.add_string(yytext); 
+	return INT_CONST; 
 }
 {TRUE}|{FALSE} 	{
 	cool_yylval.boolean = (yytext[0] == 't');
