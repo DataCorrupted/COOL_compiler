@@ -34,8 +34,8 @@ void yyerror(const char *s);
    The VERBOSE_ERRORS flag can be used in order to provide more detailed error
    messages. You can use the flag like this:
 
-     if (VERBOSE_ERRORS)
-       fprintf(stderr, "semicolon missing from end of declaration of class\n");
+	 if (VERBOSE_ERRORS)
+	   fprintf(stderr, "semicolon missing from end of declaration of class\n");
 
    By default the flag is set to 0. If you want to set it to 1 and see your
    verbose error messages, invoke your parser with the -v flag.
@@ -88,8 +88,8 @@ extern int VERBOSE_ERRORS;
 /**************************************************************************/
  
    /* Complete the nonterminal list below, giving a type for the semantic
-      value of each non terminal. (See section 3.6 in the bison 
-      documentation for details). */
+	  value of each non terminal. (See section 3.6 in the bison 
+	  documentation for details). */
 
 /* Declare types for the grammar's non-terminals. */
 %type <program> program
@@ -97,8 +97,11 @@ extern int VERBOSE_ERRORS;
 %type <class_> class
 
 /* You will want to change the following line. */
-%type <features> dummy_feature_list
-
+%type <features> feature_list
+%type <feature> feature
+%type <formal> formal
+%type <formals> formal_list
+%type <expression> expr
 /* Precedence declarations go here. */
 
 
@@ -107,27 +110,54 @@ extern int VERBOSE_ERRORS;
    Save the root of the abstract syntax tree in a global variable.
 */
 program : class_list { ast_root = program($1); }
-        ;
+		;
 
 class_list
-        : class            /* single class */
-                { $$ = single_Classes($1); }
-        | class_list class /* several classes */
-                { $$ = append_Classes($1,single_Classes($2)); }
-        ;
+		: class            /* single class */
+				{ $$ = single_Classes($1); }
+		| class_list class /* several classes */
+				{ $$ = append_Classes($1,single_Classes($2)); }
+		;
 
 /* If no parent is specified, the class inherits from the Object class. */
-class  : CLASS TYPEID '{' dummy_feature_list '}' ';'
-                { $$ = class_($2,idtable.add_string("Object"),$4,
-                              stringtable.add_string(curr_filename)); }
-        | CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
-                { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
-        ;
+class  : CLASS TYPEID '{' feature_list '}' ';' 
+	/*' /*Just to make sure that this is not so ugly,
+		Make Sublime's lexer happy. */ 
+				{ $$ = class_($2,idtable.add_string("Object"),$4,
+							  stringtable.add_string(curr_filename)); }
+		| CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
+				{ $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+		;
 
-/* Feature list may be empty, but no empty features in list. */
-dummy_feature_list:        /* empty */
-                {  $$ = nil_Features(); }
-        ;
+formal  : OBJECTID ":" TYPEID   { $$ = formal($1, $3); }
+formal_list:
+		  %empty 				{ $$ = nil_Formals(); }
+		| formal_list formal 	{ $$ = append_Formals($1, single_Formals($2)); }
+
+// Feature list may be empty, but no empty features in list. 
+feature_list:       
+		  %empty                { $$ = nil_Features(); }
+		| feature_list feature  { $$ = append_Features($1, single_Features($2)); }
+		;
+
+feature:
+		// Methods
+		  OBJECTID "(" formal_list ")" ":" TYPEID "{" expr "}" ";" {
+		  	$$ = method($1, $3, $6, $8);
+		  }
+		// Attributes, no expression given.
+		| OBJECTID ":" TYPEID {
+			$$ = attr($1, $3, no_expr());
+		}
+		// Attributes, expression given.
+		| OBJECTID ":" TYPEID ASSIGN expr ";"{
+			$$ = attr($1, $3, $5);
+		}
+
+expr:
+		  INT_CONST		{ $$ = int_const($1); }
+		| BOOL_CONST	{ $$ = bool_const($1); }
+		| STR_CONST		{ $$ = string_const($1); }
 
 /* end of grammar */
 %%
@@ -136,15 +166,15 @@ dummy_feature_list:        /* empty */
 void yyerror(const char *s)
 {
   cerr << "\"" << curr_filename << "\", line " << curr_lineno << ": " \
-    << s << " at or near ";
+	<< s << " at or near ";
   print_cool_token(yychar);
   cerr << endl;
   omerrs++;
 
   if(omerrs>20) {
-      if (VERBOSE_ERRORS)
-         fprintf(stderr, "More than 20 errors\n");
-      exit(1);
+	  if (VERBOSE_ERRORS)
+		 fprintf(stderr, "More than 20 errors\n");
+	  exit(1);
   }
 }
 
