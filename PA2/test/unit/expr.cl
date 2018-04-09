@@ -1,11 +1,10 @@
 class A {
 	main ( ) : A {
-		1
-	};
-};
-
-(*
 		{
+			let a: A in {
+				c <- a + b ;
+			};
+
 			234;
 			true;
 			"String";
@@ -32,6 +31,8 @@ class A {
 				d: D => "Testing case.";
 			esac;
 
+			let a: A in {1;};
+
 			let a: A, b: B <- 243, c: C in {
 				c <- a + b ;
 			};
@@ -54,5 +55,6 @@ class A {
 
 			func(12, 342, 3);
 		}
-	 
-*)
+	};
+};
+

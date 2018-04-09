@@ -261,9 +261,9 @@ case_:
 		;
 
 expr_block:
-		  expr ';'			{ $$ = single_Expressions($1); }
-		| expr_block expr 	{ 
-			$$ = append_Expressions($1, single_Expressions($2)); 
+		  expr ';'				{ $$ = single_Expressions($1); }
+		| expr ';' expr_block  	{ 
+			$$ = append_Expressions(single_Expressions($1), $3); 
 		}
 		;
 
@@ -271,17 +271,17 @@ expr_list:
 		  %empty 				{ $$ = nil_Expressions(); }
 		| nonempty_expr_list 	{ $$ = $1; }
 nonempty_expr_list:
-		  expr 							{ single_Expressions($1); }
+		  expr 							{ $$ = single_Expressions($1); }
 		| nonempty_expr_list ',' expr	{ 
 			$$ = append_Expressions($1, single_Expressions($3)); 
 		}
 		;
 
 let_list:
-		  OBJECTID ':' TYPEID IN expr 			{ let($1, $3, no_expr(), $5);}
-		| OBJECTID ':' TYPEID ',' let_list		{ let($1, $3, no_expr(), $5);}
-		| OBJECTID ':' TYPEID ASSIGN expr IN expr 		{ let($1, $3, $5, $7);}
-		| OBJECTID ':' TYPEID ASSIGN expr ',' let_list	{ let($1, $3, $5, $7);}
+		  OBJECTID ':' TYPEID IN expr 			{ $$ = let($1, $3, no_expr(), $5); }
+		| OBJECTID ':' TYPEID ',' let_list		{ $$ = let($1, $3, no_expr(), $5); }
+		| OBJECTID ':' TYPEID ASSIGN expr IN expr 		{ $$ = let($1, $3, $5, $7); }
+		| OBJECTID ':' TYPEID ASSIGN expr ',' let_list	{ $$ = let($1, $3, $5, $7); }
 		;
 /* end of grammar */
 %%
