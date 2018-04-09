@@ -186,7 +186,7 @@ expr:
 		| expr "+" expr			{ $$ = plus($1, $3); }
 
 		// isvoid expr 
-		| ISVOID epxr 			{ $$ = isvoid($2); }
+		| ISVOID expr 			{ $$ = isvoid($2); }
 
 		// new TYPE
 		| NEW TYPEID 			{ $$ = new_($2); }
@@ -221,22 +221,22 @@ expr:
 */
 
 		// ID <- expr
-		| OBJECTID ASSIGN expr 	{ $$ = assign($1, $2); }
+		| OBJECTID ASSIGN expr 	{ $$ = assign($1, $3); }
 		;
 
 
 cases:
 		  case_ 		{ $$ = single_Cases($1); }
-		| cases case_ 	{ $$ = append_Cases($1, $2); }
+		| cases case_ 	{ $$ = append_Cases($1, single_Cases($2)); }
 case_:
 		  OBJECTID ":" TYPEID DARROW expr ";" {
 		  	$$ = branch($1, $3, $5);
 		  }
 
 expr_block:
-		  expr 					{ $$ = single_Expression($1); }
+		  expr 					{ $$ = single_Expressions($1); }
 		| expr_block ";" expr 	{ 
-			$$ = append_Expression($1, single_Expressions($3)); 
+			$$ = append_Expressions($1, single_Expressions($3)); 
 		}
 
 expr_list:
