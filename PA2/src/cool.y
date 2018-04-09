@@ -99,13 +99,20 @@ extern int VERBOSE_ERRORS;
 /* You will want to change the following line. */
 %type <features> feature_list
 %type <feature> feature
+
 %type <formal> formal
 %type <formals> formal_list
+%type <formals> nonempty_formal_list
+
 %type <expression> expr
 %type <expressions> expr_block
 %type <expressions> expr_list
+%type <expressions> nonempty_expr_list
+
 %type <cases> cases
 %type <case_> case_
+
+%type <expression> let_list
 /* Precedence declarations go here. */
 
 
@@ -136,17 +143,23 @@ class  : CLASS TYPEID '{' feature_list '}' ';'
 formal  : OBJECTID ":" TYPEID   { $$ = formal($1, $3); }
 formal_list:
 		  %empty 				{ $$ = nil_Formals(); }
-		| formal_list formal 	{ $$ = append_Formals($1, single_Formals($2)); }
+		| nonempty_formal_list 	{ $$ = $1; }
+		;
+nonempty_formal_list:
+		  formal "," nonempty_formal_list	{ 
+		  	$$ = append_Formals(single_Formals($1), $3); 
+		}
+		;
 
 // Feature list may be empty, but no empty features in list. 
-feature_list:       
-		  %empty                { $$ = nil_Features(); }
-		| feature_list feature  { $$ = append_Features($1, single_Features($2)); }
+feature_list: 
+		  %empty 				 { $$ = nil_Features();}
+		| feature";"feature_list { $$ = append_Features(single_Features($1), $3);}
 		;
 
 feature:
 		// Methods
-		  OBJECTID "(" formal_list ")" ":" TYPEID "{" expr "}" ";" {
+		  OBJECTID "(" formal_list ")" ":" TYPEID "{" expr "}"  {
 			$$ = method($1, $3, $6, $8);
 		}
 		// Attributes, no expression given.
@@ -154,9 +167,10 @@ feature:
 			$$ = attr($1, $3, no_expr());
 		}
 		// Attributes, expression given.
-		| OBJECTID ":" TYPEID ASSIGN expr ";"{
+		| OBJECTID ":" TYPEID ASSIGN expr {
 			$$ = attr($1, $3, $5);
 		}
+		;
 
 // Doing this reversely seems easier, 
 // start from easy expressions like constants.
@@ -197,28 +211,32 @@ expr:
 		}
 
 		// let [ID: TYPE [<-expr]],+ in expr
-		// | LET let_list IN expr 	{ $$ = let(); }
-		// Deal with let later.
+		| LET let_list 			{ $$ = $2; }
 
 		// {expr;+}
 		| "{" expr_block "}" 	{ $$ = block($2); }
 
 		// while expr loop expr pool
-		| WHILE expr LOOP expr POOL {
+		| WHILE expr LOOP expr POOL 		{
 			$$ = loop($2, $4);
 		}
 
 		// if expr then expr else expr fi
-		| IF expr THEN expr ELSE expr FI{
+		| IF expr THEN expr ELSE expr FI 	{
 			$$ = cond($2, $4, $6);
 		}
 
 		// Classes and Methods.
-/*		These 3 involves Class and it's a little bit complicated.
-		| OBJECTID "(" expr_list ")" 		
-		| expr "." OBJECTID "(" expr_list ")"
-		| expr "." "@" TYPEID "." OBJECTID "(" expr_list ")"
-*/
+		| OBJECTID "(" expr_list ")" 		{
+			$$ = dispatch(object(idtable.add_string("self")), $1, $3);
+		}
+
+		| expr "." OBJECTID "(" expr_list ")"					{
+			$$ = dispatch($1, $3, $5);
+		}
+		| expr "@" TYPEID "." OBJECTID "(" expr_list ")" 	{
+			$$ = static_dispatch($1, $3, $5, $7); 
+		}
 
 		// ID <- expr
 		| OBJECTID ASSIGN expr 	{ $$ = assign($1, $3); }
@@ -226,25 +244,37 @@ expr:
 
 
 cases:
-		  case_ 		{ $$ = single_Cases($1); }
+		  case_		{ $$ = single_Cases($1); }
 		| cases case_ 	{ $$ = append_Cases($1, single_Cases($2)); }
+		;
 case_:
 		  OBJECTID ":" TYPEID DARROW expr ";" {
 		  	$$ = branch($1, $3, $5);
-		  }
+		}
+		;
 
 expr_block:
-		  expr 					{ $$ = single_Expressions($1); }
-		| expr_block ";" expr 	{ 
-			$$ = append_Expressions($1, single_Expressions($3)); 
+		  expr ";"			{ $$ = single_Expressions($1); }
+		| expr_block expr 	{ 
+			$$ = append_Expressions($1, single_Expressions($2)); 
 		}
+		;
 
 expr_list:
 		  %empty 				{ $$ = nil_Expressions(); }
-		| expr_list "," expr 	{ 
+		| nonempty_expr_list 	{ $$ = $1; }
+nonempty_expr_list:
+		  nonempty_expr_list "," expr	{ 
 			$$ = append_Expressions($1, single_Expressions($3)); 
 		}
+		;
 
+let_list:
+		  OBJECTID ":" TYPEID IN expr 			{ let($1, $3, no_expr(), $5);}
+		| OBJECTID ":" TYPEID "," let_list		{ let($1, $3, no_expr(), $5);}
+		| OBJECTID ":" TYPEID ASSIGN expr IN expr 		{ let($1, $3, $5, $7);}
+		| OBJECTID ":" TYPEID ASSIGN expr "," let_list	{ let($1, $3, $5, $7);}
+		;
 /* end of grammar */
 %%
 
