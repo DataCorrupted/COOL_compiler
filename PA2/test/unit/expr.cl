@@ -1,7 +1,7 @@
 class A {
 	main ( ) : A {
 		{
-			let a: A in {
+			let a: A<-1 in {
 				c <- a + b ;
 			};
 
