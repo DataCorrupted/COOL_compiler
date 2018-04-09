@@ -97,8 +97,9 @@ extern int VERBOSE_ERRORS;
 %type <class_> class
 
 /* You will want to change the following line. */
-%type <features> feature_list
 %type <feature> feature
+%type <features> feature_list
+%type <features> nonempty_feature_list
 
 %type <formal> formal
 %type <formals> formal_list
@@ -113,6 +114,7 @@ extern int VERBOSE_ERRORS;
 %type <case_> case_
 
 %type <expression> let_list
+
 /* Precedence declarations go here. */
 
 
@@ -133,45 +135,50 @@ class_list
 /* If no parent is specified, the class inherits from the Object class. */
 class  : CLASS TYPEID '{' feature_list '}' ';' 
 	/*' /*Just to make sure that the syntax high light is not so ugly,
-		Make Sublime's lexer happy. */ 
-				{ $$ = class_($2,idtable.add_string("Object"),$4,
+		Make Sublime's parser happy. */ 
+				{ $$ = class_($2, idtable.add_string("Object"),$4,
 							  stringtable.add_string(curr_filename)); }
 		| CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
 				{ $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
 		;
 
-formal  : OBJECTID ":" TYPEID   { $$ = formal($1, $3); }
+formal  : OBJECTID ':' TYPEID   { $$ = formal($1, $3); }
 formal_list:
-		  %empty 				{ $$ = nil_Formals(); }
-		| nonempty_formal_list 	{ $$ = $1; }
+		  nonempty_formal_list 	{ $$ = $1; }
+		| %empty 				{ $$ = nil_Formals(); }
 		;
 nonempty_formal_list:
-		  formal "," nonempty_formal_list	{ 
+		  formal 							{ $$ = single_Formals($1); }
+		| formal ',' nonempty_formal_list  	{ 
 		  	$$ = append_Formals(single_Formals($1), $3); 
 		}
 		;
 
-// Feature list may be empty, but no empty features in list. 
-feature_list: 
-		  %empty 				 { $$ = nil_Features();}
-		| feature";"feature_list { $$ = append_Features(single_Features($1), $3);}
+feature_list:
+		  nonempty_feature_list 	{ $$ = $1; }
+		| %empty 					{ $$ = nil_Features(); }
+		;
+nonempty_feature_list: 
+		  feature ';' 							{ $$ = single_Features($1); }
+		| feature ';' nonempty_feature_list 	{ 
+			$$ = append_Features(single_Features($1), $3);
+		}
 		;
 
 feature:
 		// Methods
-		  OBJECTID "(" formal_list ")" ":" TYPEID "{" expr "}"  {
+		  OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}' {
 			$$ = method($1, $3, $6, $8);
 		}
 		// Attributes, no expression given.
-		| OBJECTID ":" TYPEID {
+		| OBJECTID ':' TYPEID {
 			$$ = attr($1, $3, no_expr());
 		}
 		// Attributes, expression given.
-		| OBJECTID ":" TYPEID ASSIGN expr {
+		| OBJECTID ':' TYPEID ASSIGN expr {
 			$$ = attr($1, $3, $5);
 		}
 		;
-
 // Doing this reversely seems easier, 
 // start from easy expressions like constants.
 expr:
@@ -184,20 +191,20 @@ expr:
 		| OBJECTID 				{ $$ = object($1); }
 
 		// (expr)
-		| "(" expr ")" 			{ $$ = $2; }
+		| '(' expr ')' 			{ $$ = $2; }
 
 		// boolean operation
 		| NOT expr 				{ $$ = comp($2); }
-		| expr "=" expr 		{ $$ = eq($1, $3); }
+		| expr '=' expr 		{ $$ = eq($1, $3); }
 		| expr LE expr 			{ $$ = leq($1, $3); }
-		| expr "<" expr 		{ $$ = lt($1, $3); }
-		| "~" expr 				{ $$ = neg($2); }
+		| expr '<' expr 		{ $$ = lt($1, $3); }
+		| '~' expr 				{ $$ = neg($2); }
 
 		// arithmetic operation
-		| expr "/" expr 		{ $$ = divide($1, $3); }  
-		| expr "*" expr			{ $$ = mul($1, $3); }  
-		| expr "-" expr			{ $$ = sub($1, $3); } 
-		| expr "+" expr			{ $$ = plus($1, $3); }
+		| expr '/' expr 		{ $$ = divide($1, $3); }  
+		| expr '*' expr			{ $$ = mul($1, $3); }  
+		| expr '-' expr			{ $$ = sub($1, $3); } 
+		| expr '+' expr			{ $$ = plus($1, $3); }
 
 		// isvoid expr 
 		| ISVOID expr 			{ $$ = isvoid($2); }
@@ -214,7 +221,7 @@ expr:
 		| LET let_list 			{ $$ = $2; }
 
 		// {expr;+}
-		| "{" expr_block "}" 	{ $$ = block($2); }
+		| '{' expr_block '}' 	{ $$ = block($2); }
 
 		// while expr loop expr pool
 		| WHILE expr LOOP expr POOL 		{
@@ -227,14 +234,14 @@ expr:
 		}
 
 		// Classes and Methods.
-		| OBJECTID "(" expr_list ")" 		{
+		| OBJECTID '(' expr_list ')' 		{
 			$$ = dispatch(object(idtable.add_string("self")), $1, $3);
 		}
 
-		| expr "." OBJECTID "(" expr_list ")"					{
+		| expr '.' OBJECTID '(' expr_list ')'					{
 			$$ = dispatch($1, $3, $5);
 		}
-		| expr "@" TYPEID "." OBJECTID "(" expr_list ")" 	{
+		| expr '@' TYPEID '.' OBJECTID '(' expr_list ')' 	{
 			$$ = static_dispatch($1, $3, $5, $7); 
 		}
 
@@ -244,17 +251,17 @@ expr:
 
 
 cases:
-		  case_		{ $$ = single_Cases($1); }
+		  case_			{ $$ = single_Cases($1); }
 		| cases case_ 	{ $$ = append_Cases($1, single_Cases($2)); }
 		;
 case_:
-		  OBJECTID ":" TYPEID DARROW expr ";" {
+		  OBJECTID ':' TYPEID DARROW expr ';' {
 		  	$$ = branch($1, $3, $5);
 		}
 		;
 
 expr_block:
-		  expr ";"			{ $$ = single_Expressions($1); }
+		  expr ';'			{ $$ = single_Expressions($1); }
 		| expr_block expr 	{ 
 			$$ = append_Expressions($1, single_Expressions($2)); 
 		}
@@ -264,16 +271,17 @@ expr_list:
 		  %empty 				{ $$ = nil_Expressions(); }
 		| nonempty_expr_list 	{ $$ = $1; }
 nonempty_expr_list:
-		  nonempty_expr_list "," expr	{ 
+		  expr 							{ single_Expressions($1); }
+		| nonempty_expr_list ',' expr	{ 
 			$$ = append_Expressions($1, single_Expressions($3)); 
 		}
 		;
 
 let_list:
-		  OBJECTID ":" TYPEID IN expr 			{ let($1, $3, no_expr(), $5);}
-		| OBJECTID ":" TYPEID "," let_list		{ let($1, $3, no_expr(), $5);}
-		| OBJECTID ":" TYPEID ASSIGN expr IN expr 		{ let($1, $3, $5, $7);}
-		| OBJECTID ":" TYPEID ASSIGN expr "," let_list	{ let($1, $3, $5, $7);}
+		  OBJECTID ':' TYPEID IN expr 			{ let($1, $3, no_expr(), $5);}
+		| OBJECTID ':' TYPEID ',' let_list		{ let($1, $3, no_expr(), $5);}
+		| OBJECTID ':' TYPEID ASSIGN expr IN expr 		{ let($1, $3, $5, $7);}
+		| OBJECTID ':' TYPEID ASSIGN expr ',' let_list	{ let($1, $3, $5, $7);}
 		;
 /* end of grammar */
 %%
