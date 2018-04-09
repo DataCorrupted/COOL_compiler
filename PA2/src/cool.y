@@ -102,6 +102,10 @@ extern int VERBOSE_ERRORS;
 %type <formal> formal
 %type <formals> formal_list
 %type <expression> expr
+%type <expressions> expr_block
+%type <expressions> expr_list
+%type <cases> cases
+%type <case_> case_
 /* Precedence declarations go here. */
 
 
@@ -121,7 +125,7 @@ class_list
 
 /* If no parent is specified, the class inherits from the Object class. */
 class  : CLASS TYPEID '{' feature_list '}' ';' 
-	/*' /*Just to make sure that this is not so ugly,
+	/*' /*Just to make sure that the syntax high light is not so ugly,
 		Make Sublime's lexer happy. */ 
 				{ $$ = class_($2,idtable.add_string("Object"),$4,
 							  stringtable.add_string(curr_filename)); }
@@ -143,8 +147,8 @@ feature_list:
 feature:
 		// Methods
 		  OBJECTID "(" formal_list ")" ":" TYPEID "{" expr "}" ";" {
-		  	$$ = method($1, $3, $6, $8);
-		  }
+			$$ = method($1, $3, $6, $8);
+		}
 		// Attributes, no expression given.
 		| OBJECTID ":" TYPEID {
 			$$ = attr($1, $3, no_expr());
@@ -154,10 +158,92 @@ feature:
 			$$ = attr($1, $3, $5);
 		}
 
+// Doing this reversely seems easier, 
+// start from easy expressions like constants.
 expr:
-		  INT_CONST		{ $$ = int_const($1); }
-		| BOOL_CONST	{ $$ = bool_const($1); }
-		| STR_CONST		{ $$ = string_const($1); }
+		// Constant
+		  BOOL_CONST			{ $$ = bool_const($1); }
+		| STR_CONST				{ $$ = string_const($1); }
+		| INT_CONST				{ $$ = int_const($1); }
+
+		// ID
+		| OBJECTID 				{ $$ = object($1); }
+
+		// (expr)
+		| "(" expr ")" 			{ $$ = $2; }
+
+		// boolean operation
+		| NOT expr 				{ $$ = comp($2); }
+		| expr "=" expr 		{ $$ = eq($1, $3); }
+		| expr LE expr 			{ $$ = leq($1, $3); }
+		| expr "<" expr 		{ $$ = lt($1, $3); }
+		| "~" expr 				{ $$ = neg($2); }
+
+		// arithmetic operation
+		| expr "/" expr 		{ $$ = divide($1, $3); }  
+		| expr "*" expr			{ $$ = mul($1, $3); }  
+		| expr "-" expr			{ $$ = sub($1, $3); } 
+		| expr "+" expr			{ $$ = plus($1, $3); }
+
+		// isvoid expr 
+		| ISVOID epxr 			{ $$ = isvoid($2); }
+
+		// new TYPE
+		| NEW TYPEID 			{ $$ = new_($2); }
+
+		// case expr of [ID: TYPE = expr;]+ esac
+		| CASE expr OF cases ESAC	{ 
+			$$ = typcase($2, $4);
+		}
+
+		// let [ID: TYPE [<-expr]],+ in expr
+		// | LET let_list IN expr 	{ $$ = let(); }
+		// Deal with let later.
+
+		// {expr;+}
+		| "{" expr_block "}" 	{ $$ = block($2); }
+
+		// while expr loop expr pool
+		| WHILE expr LOOP expr POOL {
+			$$ = loop($2, $4);
+		}
+
+		// if expr then expr else expr fi
+		| IF expr THEN expr ELSE expr FI{
+			$$ = cond($2, $4, $6);
+		}
+
+		// Classes and Methods.
+/*		These 3 involves Class and it's a little bit complicated.
+		| OBJECTID "(" expr_list ")" 		
+		| expr "." OBJECTID "(" expr_list ")"
+		| expr "." "@" TYPEID "." OBJECTID "(" expr_list ")"
+*/
+
+		// ID <- expr
+		| OBJECTID ASSIGN expr 	{ $$ = assign($1, $2); }
+		;
+
+
+cases:
+		  case_ 		{ $$ = single_Cases($1); }
+		| cases case_ 	{ $$ = append_Cases($1, $2); }
+case_:
+		  OBJECTID ":" TYPEID DARROW expr ";" {
+		  	$$ = branch($1, $3, $5);
+		  }
+
+expr_block:
+		  expr 					{ $$ = single_Expression($1); }
+		| expr_block ";" expr 	{ 
+			$$ = append_Expression($1, single_Expressions($3)); 
+		}
+
+expr_list:
+		  %empty 				{ $$ = nil_Expressions(); }
+		| expr_list "," expr 	{ 
+			$$ = append_Expressions($1, single_Expressions($3)); 
+		}
 
 /* end of grammar */
 %%
