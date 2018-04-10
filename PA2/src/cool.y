@@ -29,7 +29,7 @@ int omerrs = 0;              /* number of errors in lexing and parsing */
    error message of yyerror, since it will be used for grading puproses.
 */
 void yyerror(const char *s);
-
+void emptyErr();
 /*
    The VERBOSE_ERRORS flag can be used in order to provide more detailed error
    messages. You can use the flag like this:
@@ -160,7 +160,8 @@ class  : CLASS TYPEID '{' feature_list '}' ';'
 		| CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
 				{ $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
 		// This saves class from being terminated by error
-		| CLASS error ';' { /*Do nothing, go on. */ }
+		//| CLASS ';' 		{ emptyErr(); }
+		| CLASS error ';' 	{ /*Do nothing, go on. */ }
 		;
 
 // Formal list. It involves a nonempty formal list.
@@ -182,33 +183,27 @@ feature_list:
 		| %empty 					{ $$ = nil_Features(); }
 		;
 nonempty_feature_list: 
-		  feature 							{ $$ = single_Features($1); }
-		| feature nonempty_feature_list 	{ 
-			$$ = append_Features(single_Features($1), $2);
+		  feature ';'  							{ $$ = single_Features($1); }
+		| feature ';' nonempty_feature_list 	{ 
+			$$ = append_Features(single_Features($1), $3);
 		}
+		// Save features from being terminated due to error
+		| error ';' 							{ /* Do nothing, go on. */ }
+		| error ';' nonempty_feature_list		{ /* Do nothing, go on. */ }
 		;
 feature:
 		// Methods
-		  OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}' ';'{
+		  OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}'{
 			$$ = method($1, $3, $6, $8);
 		}
 		// Attributes, no expression given.
-		| OBJECTID ':' TYPEID ';'				{
+		| OBJECTID ':' TYPEID				{
 			$$ = attr($1, $3, no_expr());
 		}
 		// Attributes, expression given.
-		| OBJECTID ':' TYPEID ASSIGN expr ';'	{
+		| OBJECTID ':' TYPEID ASSIGN expr	{
 			$$ = attr($1, $3, $5);
 		}
-		// Save features from being terminated due to error
-		| OBJECTID error ';'					{ /* Do nothing, go on. */ }
-		/*| OBJECTID ';' 							{ 
-			// An ugly hack to identify empty features like "m;"
-			char tmp = yychar;
-			yychar = ';';
-			yyerror("syntax error"); 
-			yychar = tmp;
-		}*/
 		;
 // Doing this reversely seems easier, 
 // start from easy expressions like constants.
@@ -295,6 +290,9 @@ expr_block:
 		| expr ';' expr_block  	{ 
 			$$ = append_Expressions(single_Expressions($1), $3); 
 		}
+		// This deals with empty semi-colon.
+		//| error expr_block 		{ /* Do nothing, go on. */ }
+		| error ';' expr_block 	{ /* Do nothing, go on. */ }
 		;
 
 expr_list:
@@ -334,4 +332,12 @@ void yyerror(const char *s)
 	  exit(1);
   }
 }
-
+/*
+// An ugly hack to identify empty features like "m;"
+void emptyErr(){
+	char tmp = yychar;
+	yychar = ';';
+	yyerror("syntax error"); 
+	yychar = tmp;
+}
+*/

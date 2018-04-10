@@ -4,10 +4,9 @@ class B{
 };
 
 class A{
-	m ;
-	main() : string {};
 	m;
-
+	main() : string {};
+	m; 						-- This line can't be recognized.
 	a: ;
 
 	a: A 1;
@@ -15,4 +14,5 @@ class A{
 	main() : string {
 		1
 	};
+	m; 	
 };
