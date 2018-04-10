@@ -1,10 +1,6 @@
 class A {
 	main ( ) : A {
 		{
-			let a: A<-1 in {
-				c <- a + b ;
-			};
-
 			234;
 			true;
 			"String";
@@ -30,17 +26,6 @@ class A {
 				c: C => 23 + help;
 				d: D => "Testing case.";
 			esac;
-
-			let a: A in {1;};
-
-			let a: A, b: B <- 243, c: C in {
-				c <- a + b ;
-			};
-			let a: A in {
-				a <- a + 1;
-			};
-
-			{ let a:A in {3;}; "This is a long test."; let block: Block in {2;};};
 			while 345 loop a <- a + 1 pool;
 			while {a = a;} loop {
 				a <- a + 1;
