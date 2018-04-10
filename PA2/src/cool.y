@@ -106,6 +106,7 @@ extern int VERBOSE_ERRORS;
 %type <formals> nonempty_formal_list
 
 %type <expression> expr
+%type <expression> block_expr
 %type <expressions> expr_block
 %type <expressions> expr_list
 %type <expressions> nonempty_expr_list
@@ -160,8 +161,9 @@ class  : CLASS TYPEID '{' feature_list '}' ';'
 		| CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
 				{ $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
 		// This saves class from being terminated by error
-		//| CLASS ';' 		{ emptyErr(); }
-		| CLASS error ';' 	{ /*Do nothing, go on. */ }
+		| CLASS error ';' 	{ 	 
+			if (VERBOSE_ERRORS) { cerr << "Class name illegal." << endl; 
+		}}
 		;
 
 // Formal list. It involves a nonempty formal list.
@@ -183,27 +185,29 @@ feature_list:
 		| %empty 								{ $$ = nil_Features(); }
 		;
 nonempty_feature_list: 
-		  feature ';'  							{ $$ = single_Features($1); }
-		| feature ';' nonempty_feature_list 	{ 
-			$$ = append_Features(single_Features($1), $3);
+		  feature  							{ $$ = single_Features($1); }
+		| feature nonempty_feature_list 	{ 
+			$$ = append_Features(single_Features($1), $2);
 		}
 		// Save features from being terminated due to error.
-		| error ';' 							{ /* Do nothing, go on. */ }
-		| error ';' nonempty_feature_list		{ /* Do nothing, go on. */ }
-		;
+
 feature:
 		// Methods
-		  OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}'{
+		  OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}' ';' {
 			$$ = method($1, $3, $6, $8);
 		}
 		// Attributes, no expression given.
-		| OBJECTID ':' TYPEID				{
+		| OBJECTID ':' TYPEID ';'				{
 			$$ = attr($1, $3, no_expr());
 		}
 		// Attributes, expression given.
-		| OBJECTID ':' TYPEID ASSIGN expr	{
+		| OBJECTID ':' TYPEID ASSIGN expr ';'	{
 			$$ = attr($1, $3, $5);
 		}
+		| OBJECTID error ';' 					{ 
+			if (VERBOSE_ERRORS) { 
+				cerr << "Syntax error in attribute or method " << $1 << endl; 
+		}}
 		;
 // Doing this reversely seems easier, 
 // start from easy expressions like constants.
@@ -279,14 +283,18 @@ case_:
 		}
 		;
 
+block_expr:
+		  expr ';' 			{ $$ = $1; }
+		| error ';' 		{
+			if (VERBOSE_ERRORS) { 
+				cerr << "Syntax error in expression of block." << endl; 		
+		}}
+		;
 expr_block:
-		  expr ';'				{ $$ = single_Expressions($1); }
-		| expr ';' expr_block  	{ 
-			$$ = append_Expressions(single_Expressions($1), $3); 
+		  block_expr				{ $$ = single_Expressions($1); }
+		| block_expr expr_block  	{ 
+			$$ = append_Expressions(single_Expressions($1), $2); 
 		}
-		// This deals with empty semi-colon.
-		//| error expr_block 		{ /* Do nothing, go on. */ }
-		| error ';' expr_block 	{ /* Do nothing, go on. */ }
 		;
 
 expr_list:
@@ -326,12 +334,3 @@ void yyerror(const char *s)
 	  exit(1);
   }
 }
-/*
-// An ugly hack to identify empty features like "m;"
-void emptyErr(){
-	char tmp = yychar;
-	yychar = ';';
-	yyerror("syntax error"); 
-	yychar = tmp;
-}
-*/
