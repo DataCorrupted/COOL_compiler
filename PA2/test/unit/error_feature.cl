@@ -5,9 +5,12 @@ class B{
 
 class A{
 	m;
+	m;
 	main() : string {};
-	m; 						-- This line can't be recognized.
+	m;						-- This line can't be recognized.
 	a: ;
+
+	a(:
 
 	a: A 1;
 	a: c;

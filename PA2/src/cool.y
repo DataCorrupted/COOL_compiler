@@ -166,12 +166,12 @@ class  : CLASS TYPEID '{' feature_list '}' ';'
 
 // Formal list. It involves a nonempty formal list.
 formal_list:
-		  nonempty_formal_list 	{ $$ = $1; }
-		| %empty 				{ $$ = nil_Formals(); }
+		  nonempty_formal_list 					{ $$ = $1; }
+		| %empty 								{ $$ = nil_Formals(); }
 		;
 nonempty_formal_list:
-		  formal 							{ $$ = single_Formals($1); }
-		| formal ',' nonempty_formal_list  	{ 
+		  formal 								{ $$ = single_Formals($1); }
+		| formal ',' nonempty_formal_list 		{ 
 		  	$$ = append_Formals(single_Formals($1), $3); 
 		}
 		;
@@ -179,15 +179,15 @@ formal  : OBJECTID ':' TYPEID   { $$ = formal($1, $3); }
 
 // Feature list. It involves a nonempty feature list.
 feature_list:
-		  nonempty_feature_list 	{ $$ = $1; }
-		| %empty 					{ $$ = nil_Features(); }
+		  nonempty_feature_list 				{ $$ = $1; }
+		| %empty 								{ $$ = nil_Features(); }
 		;
 nonempty_feature_list: 
 		  feature ';'  							{ $$ = single_Features($1); }
 		| feature ';' nonempty_feature_list 	{ 
 			$$ = append_Features(single_Features($1), $3);
 		}
-		// Save features from being terminated due to error
+		// Save features from being terminated due to error.
 		| error ';' 							{ /* Do nothing, go on. */ }
 		| error ';' nonempty_feature_list		{ /* Do nothing, go on. */ }
 		;
@@ -209,58 +209,52 @@ feature:
 // start from easy expressions like constants.
 expr:
 		// Constant
-		  BOOL_CONST			{ $$ = bool_const($1); }
-		| STR_CONST				{ $$ = string_const($1); }
-		| INT_CONST				{ $$ = int_const($1); }
+		  BOOL_CONST						{ $$ = bool_const($1); }
+		| STR_CONST							{ $$ = string_const($1); }
+		| INT_CONST							{ $$ = int_const($1); }
 
 		// ID
-		| OBJECTID 				{ $$ = object($1); }
+		| OBJECTID 							{ $$ = object($1); }
 
 		// (expr)
-		| '(' expr ')' 			{ $$ = $2; }
+		| '(' expr ')' 						{ $$ = $2; }
 
 		// boolean operation
-		| NOT expr 				{ $$ = comp($2); }
-		| expr '=' expr 		{ $$ = eq($1, $3); }
-		| expr LE expr 			{ $$ = leq($1, $3); }
-		| expr '<' expr 		{ $$ = lt($1, $3); }
-		| '~' expr 				{ $$ = neg($2); }
+		| NOT expr 							{ $$ = comp($2); }
+		| expr '=' expr 					{ $$ = eq($1, $3); }
+		| expr LE expr 						{ $$ = leq($1, $3); }
+		| expr '<' expr 					{ $$ = lt($1, $3); }
+		| '~' expr 							{ $$ = neg($2); }
 
 		// arithmetic operation
-		| expr '/' expr 		{ $$ = divide($1, $3); }  
-		| expr '*' expr			{ $$ = mul($1, $3); }  
-		| expr '-' expr			{ $$ = sub($1, $3); } 
-		| expr '+' expr			{ $$ = plus($1, $3); }
+		| expr '/' expr 					{ $$ = divide($1, $3); }  
+		| expr '*' expr						{ $$ = mul($1, $3); }  
+		| expr '-' expr						{ $$ = sub($1, $3); } 
+		| expr '+' expr						{ $$ = plus($1, $3); }
 
 		// isvoid expr 
-		| ISVOID expr 			{ $$ = isvoid($2); }
+		| ISVOID expr 						{ $$ = isvoid($2); }
 
 		// new TYPE
-		| NEW TYPEID 			{ $$ = new_($2); }
+		| NEW TYPEID 						{ $$ = new_($2); }
 
 		// case expr of [ID: TYPE = expr;]+ esac
-		| CASE expr OF cases ESAC	{ 
-			$$ = typcase($2, $4);
-		}
+		| CASE expr OF cases ESAC			{ $$ = typcase($2, $4);	}
 
 		// let [ID: TYPE [<-expr]],+ in expr
-		| LET let_list 			{ $$ = $2; }
+		| LET let_list 						{ $$ = $2; }
 
 		// {expr;+}
-		| '{' expr_block '}' 	{ $$ = block($2); }
+		| '{' expr_block '}' 				{ $$ = block($2); }
 
 		// while expr loop expr pool
-		| WHILE expr LOOP expr POOL 		{
-			$$ = loop($2, $4);
-		}
+		| WHILE expr LOOP expr POOL 		{ $$ = loop($2, $4); }
 
 		// if expr then expr else expr fi
-		| IF expr THEN expr ELSE expr FI 	{
-			$$ = cond($2, $4, $6);
-		}
+		| IF expr THEN expr ELSE expr FI 	{ $$ = cond($2, $4, $6); }
 
 		// Classes and Methods.
-		| OBJECTID '(' expr_list ')' 			{
+		| OBJECTID '(' expr_list ')' 		{
 			$$ = dispatch(object(idtable.add_string("self")), $1, $3);
 		}
 		| expr '.' OBJECTID '(' expr_list ')'	{
@@ -271,7 +265,7 @@ expr:
 		}
 
 		// ID <- expr
-		| OBJECTID ASSIGN expr 	{ $$ = assign($1, $3); }
+		| OBJECTID ASSIGN expr 				{ $$ = assign($1, $3); }
 		;
 
 
@@ -296,8 +290,8 @@ expr_block:
 		;
 
 expr_list:
-		  %empty 				{ $$ = nil_Expressions(); }
-		| nonempty_expr_list 	{ $$ = $1; }
+		  %empty 						{ $$ = nil_Expressions(); }
+		| nonempty_expr_list 			{ $$ = $1; }
 nonempty_expr_list:
 		  expr 							{ $$ = single_Expressions($1); }
 		| nonempty_expr_list ',' expr	{ 

@@ -11,7 +11,6 @@
 class A {
 };
 
-Class ;
 
 (* error:  b is not a type identifier *)
 Class b inherits A {
@@ -29,3 +28,6 @@ Class D inherts A {
 Class E inherits A {
 ;
 
+(* error:  b is not a type identifier *)
+Class b inherits A {
+};
