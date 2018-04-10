@@ -116,12 +116,31 @@ extern int VERBOSE_ERRORS;
 %type <expression> let_list
 
 /* Precedence declarations go here. */
+// Precedence rule for bison see bison.pdf Chp 5.3, pp.109
 
+/* Setting IN with lowest precedence resolves conflict,
+ * allowing parser to go as far as possible to parse a let.
+ */
+%left IN
+
+// Precedence rule for cool see CoolAid Chp 11.1, pp. 15
+%right ASSIGN
+%left NOT
+%nonassoc LE '<' '='
+%left '+' '-'
+%left '*' '/'
+%left ISVOID
+%left '~'
+%left '@'
+%left '.'
 
 %%
 /* 
    Save the root of the abstract syntax tree in a global variable.
 */
+
+// The definition of Cool grammar can be found in 
+// CoolAid Chp 12, pp. 16
 program : class_list { ast_root = program($1); }
 		;
 
@@ -140,9 +159,12 @@ class  : CLASS TYPEID '{' feature_list '}' ';'
 							  stringtable.add_string(curr_filename)); }
 		| CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
 				{ $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+		// This saves class from being terminated by error
+		| CLASS error ';' 
+				{ /*Do nothing, go on. */ }
 		;
 
-formal  : OBJECTID ':' TYPEID   { $$ = formal($1, $3); }
+// Formal list. It involves a nonempty formal list.
 formal_list:
 		  nonempty_formal_list 	{ $$ = $1; }
 		| %empty 				{ $$ = nil_Formals(); }
@@ -153,32 +175,35 @@ nonempty_formal_list:
 		  	$$ = append_Formals(single_Formals($1), $3); 
 		}
 		;
+formal  : OBJECTID ':' TYPEID   { $$ = formal($1, $3); }
 
+// Feature list. It involves a nonempty feature list.
 feature_list:
 		  nonempty_feature_list 	{ $$ = $1; }
 		| %empty 					{ $$ = nil_Features(); }
 		;
 nonempty_feature_list: 
-		  feature ';' 							{ $$ = single_Features($1); }
-		| feature ';' nonempty_feature_list 	{ 
-			$$ = append_Features(single_Features($1), $3);
+		  feature  							{ $$ = single_Features($1); }
+		| feature nonempty_feature_list 	{ 
+			$$ = append_Features(single_Features($1), $2);
 		}
+		// Save features from being terminated due to error
+		// | error feature_list { /*Do nothing, go on.*/}
 		;
-
 feature:
 		// Methods
-		  OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}' {
+		  OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}' ';' {
 			$$ = method($1, $3, $6, $8);
 		}
 		// Attributes, no expression given.
-		| OBJECTID ':' TYPEID {
+		| OBJECTID ':' TYPEID ';'{
 			$$ = attr($1, $3, no_expr());
 		}
 		// Attributes, expression given.
-		| OBJECTID ':' TYPEID ASSIGN expr {
+		| OBJECTID ':' TYPEID ASSIGN expr ';'{
 			$$ = attr($1, $3, $5);
 		}
-		;
+		| error ';' 
 // Doing this reversely seems easier, 
 // start from easy expressions like constants.
 expr:
@@ -234,11 +259,10 @@ expr:
 		}
 
 		// Classes and Methods.
-		| OBJECTID '(' expr_list ')' 		{
+		| OBJECTID '(' expr_list ')' 			{
 			$$ = dispatch(object(idtable.add_string("self")), $1, $3);
 		}
-
-		| expr '.' OBJECTID '(' expr_list ')'					{
+		| expr '.' OBJECTID '(' expr_list ')'	{
 			$$ = dispatch($1, $3, $5);
 		}
 		| expr '@' TYPEID '.' OBJECTID '(' expr_list ')' 	{
