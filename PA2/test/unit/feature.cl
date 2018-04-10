@@ -2,17 +2,18 @@ class Feature {
 	a: A;
 	b: B <- 23;
 	c: C <- {
+		m;
 		a <- 23;
-		d: D <- a + b;
+		d <- a + b;
 		while d*2 < 1000 loop {
 			d <- d * 2;
-			e: E <- isvoid d;
+			e <- isvoid d;
 		} pool;
 		d;
-	}
+	};
 
-	main() : SELF_TYPE a;
-	another_main( a: String, b: Main) {
-		c.main(34, d);
+	main() : SELF_TYPE {a};
+	another_main( a: String, b: Main) : Int {
+		c.main(34, d)
 	};
 };
