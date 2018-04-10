@@ -1,5 +1,9 @@
 class L{
 	main(argv: Int, argc: String) : Int{{
+
+		-- This is a conflict. Below are ways of explain them.
+		-- (let a:A in 3) + (let b:B <- 3 in 5);
+		-- let a:A in (3 + let b:B <- 3 in 5);
 		let a:A in 3 + let b:B <- 3 in 5;
 
 		let a: A <- 1 in {1;};
