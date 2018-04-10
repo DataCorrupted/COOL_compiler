@@ -152,7 +152,7 @@ class_list
 		;
 
 /* If no parent is specified, the class inherits from the Object class. */
-class  : CLASS TYPEID '{' feature_list '}' ';' 
+class  : CLASS TYPEID '{' feature_list '}' ';'
 	/*' /*Just to make sure that the syntax high light is not so ugly,
 		Make Sublime's parser happy. */ 
 				{ $$ = class_($2, idtable.add_string("Object"),$4,
@@ -160,8 +160,7 @@ class  : CLASS TYPEID '{' feature_list '}' ';'
 		| CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
 				{ $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
 		// This saves class from being terminated by error
-		| CLASS error ';' 
-				{ /*Do nothing, go on. */ }
+		| CLASS error ';' { /*Do nothing, go on. */ }
 		;
 
 // Formal list. It involves a nonempty formal list.
@@ -183,27 +182,34 @@ feature_list:
 		| %empty 					{ $$ = nil_Features(); }
 		;
 nonempty_feature_list: 
-		  feature  							{ $$ = single_Features($1); }
+		  feature 							{ $$ = single_Features($1); }
 		| feature nonempty_feature_list 	{ 
 			$$ = append_Features(single_Features($1), $2);
 		}
-		// Save features from being terminated due to error
-		// | error feature_list { /*Do nothing, go on.*/}
 		;
 feature:
 		// Methods
-		  OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}' ';' {
+		  OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}' ';'{
 			$$ = method($1, $3, $6, $8);
 		}
 		// Attributes, no expression given.
-		| OBJECTID ':' TYPEID ';'{
+		| OBJECTID ':' TYPEID ';'				{
 			$$ = attr($1, $3, no_expr());
 		}
 		// Attributes, expression given.
-		| OBJECTID ':' TYPEID ASSIGN expr ';'{
+		| OBJECTID ':' TYPEID ASSIGN expr ';'	{
 			$$ = attr($1, $3, $5);
 		}
-		| error ';' 
+		// Save features from being terminated due to error
+		| OBJECTID error ';'					{ /* Do nothing, go on. */ }
+		/*| OBJECTID ';' 							{ 
+			// An ugly hack to identify empty features like "m;"
+			char tmp = yychar;
+			yychar = ';';
+			yyerror("syntax error"); 
+			yychar = tmp;
+		}*/
+		;
 // Doing this reversely seems easier, 
 // start from easy expressions like constants.
 expr:
@@ -306,6 +312,9 @@ let_list:
 		| OBJECTID ':' TYPEID ',' let_list		{ $$ = let($1, $3, no_expr(), $5); }
 		| OBJECTID ':' TYPEID ASSIGN expr IN expr 		{ $$ = let($1, $3, $5, $7); }
 		| OBJECTID ':' TYPEID ASSIGN expr ',' let_list	{ $$ = let($1, $3, $5, $7); }
+		// Save let from being terminated due to error
+		| error IN expr							{ /* Do nothing, go on. */ }
+		| error ',' let_list					{ /* Do nothing, go on. */ }
 		;
 /* end of grammar */
 %%

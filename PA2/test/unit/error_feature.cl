@@ -1,11 +1,18 @@
+
+class B{
+	main() : string { 1};
+};
+
 class A{
-	A: A <- 1;
+	m ;
+	main() : string {};
+	m;
+
+	a: ;
+
+	a: A 1;
 	a: c;
-	Main() : String {
+	main() : string {
 		1
 	};
-	main() : string {
-
-	};
-
 };
