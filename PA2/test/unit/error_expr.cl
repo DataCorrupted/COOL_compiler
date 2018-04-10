@@ -7,6 +7,9 @@ class ErrExpr{
 		;
 		a;
 		12b;
+		;
+		;
+		
 	}};
 	main(): Int{{
 		a <-;

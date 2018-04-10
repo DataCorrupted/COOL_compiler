@@ -11,7 +11,6 @@
 class A {
 };
 
-
 (* error:  b is not a type identifier *)
 Class b inherits A {
 };
@@ -23,6 +22,9 @@ Class C inherits a {
 (* error:  keyword inherits is misspelled *)
 Class D inherts A {
 };
+class alsdk {
+	
+};
 
 (* error:  closing brace is missing *)
 Class E inherits A {
@@ -31,3 +33,4 @@ Class E inherits A {
 (* error:  b is not a type identifier *)
 Class b inherits A {
 };
+

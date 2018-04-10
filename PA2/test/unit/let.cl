@@ -11,7 +11,7 @@ class L{
 		let a: A <- 1, b: B <- 243, c: C <- 0 in {
 			c <- a + b ;
 		};
-		let a: A <- 1 in {
+		let a: A in {
 			a <- a + 1;
 		};
 

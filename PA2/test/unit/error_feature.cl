@@ -6,7 +6,7 @@ class B{
 class A{
 	m;
 	m;
-	main() : string {};
+	sain() : string {};
 	m;						-- This line can't be recognized.
 	a: ;
 
