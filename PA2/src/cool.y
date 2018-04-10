@@ -21,7 +21,7 @@ extern char *curr_filename;
 Program ast_root;            /* the result of the parse  */
 Classes parse_results;       /* for use in semantic analysis */
 int omerrs = 0;              /* number of errors in lexing and parsing */
-
+Symbol class_name;
 /*
    The parser will always call the yyerror function when it encounters a parse
    error. The given yyerror implementation (see below) justs prints out the
@@ -29,7 +29,7 @@ int omerrs = 0;              /* number of errors in lexing and parsing */
    error message of yyerror, since it will be used for grading puproses.
 */
 void yyerror(const char *s);
-void emptyErr();
+
 /*
    The VERBOSE_ERRORS flag can be used in order to provide more detailed error
    messages. You can use the flag like this:
@@ -95,7 +95,7 @@ extern int VERBOSE_ERRORS;
 %type <program> program
 %type <classes> class_list
 %type <class_> class
-
+%type <symbol> class_head
 /* You will want to change the following line. */
 %type <feature> feature
 %type <features> feature_list
@@ -106,7 +106,7 @@ extern int VERBOSE_ERRORS;
 %type <formals> nonempty_formal_list
 
 %type <expression> expr
-%type <expression> block_expr
+%type <expression> sig_expr
 %type <expressions> expr_block
 %type <expressions> expr_list
 %type <expressions> nonempty_expr_list
@@ -152,17 +152,33 @@ class_list
 				{ $$ = append_Classes($1,single_Classes($2)); }
 		;
 
+class_head: 
+		  CLASS TYPEID 			{ class_name = $2; 	$$ = $2; }
+		// Save the error for later.
+		| CLASS 			 	{ $$ = NULL; }
+		;
 /* If no parent is specified, the class inherits from the Object class. */
-class  : CLASS TYPEID '{' feature_list '}' ';'
+class  : class_head '{' feature_list '}' ';'
 	/*' /*Just to make sure that the syntax high light is not so ugly,
-		Make Sublime's parser happy. */ 
-				{ $$ = class_($2, idtable.add_string("Object"),$4,
-							  stringtable.add_string(curr_filename)); }
-		| CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
-				{ $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+		Make Sublime's parser happy. */ { 
+			$$ = class_($1, idtable.add_string("Object"),$3,
+					  stringtable.add_string(curr_filename)); 
+		}
+		| class_head INHERITS TYPEID '{' feature_list '}' ';' { 
+			$$ = class_($1,$3,$5,stringtable.add_string(curr_filename)); 
+		}
 		// This saves class from being terminated by error
-		| CLASS error ';' 	{ 	 
-			if (VERBOSE_ERRORS) { cerr << "Class name illegal." << endl; 
+		| class_head error ';' 	{ 	 
+			if (VERBOSE_ERRORS){
+				if ($1 != NULL) { 
+					// Not NULL means that class name is correct,
+					// but something else went wrong.
+					cerr << "Illegal definition of class "  
+						 <<  class_name->get_string() << endl; 
+				} else {
+					// NULL means that the class name is not TYPEID.
+					cerr << "Illegal class name. TYPEID expected." << endl;
+				}
 		}}
 		;
 
@@ -189,7 +205,6 @@ nonempty_feature_list:
 		| feature nonempty_feature_list 	{ 
 			$$ = append_Features(single_Features($1), $2);
 		}
-		// Save features from being terminated due to error.
 
 feature:
 		// Methods
@@ -206,7 +221,9 @@ feature:
 		}
 		| OBJECTID error ';' 					{ 
 			if (VERBOSE_ERRORS) { 
-				cerr << "Syntax error in attribute or method " << $1 << endl; 
+				cerr << "Syntax error in attribute or method " << $1 
+					 << " in class " << class_name->get_string() << endl; 
+
 		}}
 		;
 // Doing this reversely seems easier, 
@@ -283,7 +300,8 @@ case_:
 		}
 		;
 
-block_expr:
+// Single expression allows easier error handling.
+sig_expr:
 		  expr ';' 			{ $$ = $1; }
 		| error ';' 		{
 			if (VERBOSE_ERRORS) { 
@@ -291,8 +309,8 @@ block_expr:
 		}}
 		;
 expr_block:
-		  block_expr				{ $$ = single_Expressions($1); }
-		| block_expr expr_block  	{ 
+		  sig_expr				{ $$ = single_Expressions($1); }
+		| sig_expr expr_block  	{ 
 			$$ = append_Expressions(single_Expressions($1), $2); 
 		}
 		;
@@ -313,8 +331,14 @@ let_list:
 		| OBJECTID ':' TYPEID ASSIGN expr IN expr 		{ $$ = let($1, $3, $5, $7); }
 		| OBJECTID ':' TYPEID ASSIGN expr ',' let_list	{ $$ = let($1, $3, $5, $7); }
 		// Save let from being terminated due to error
-		| error IN expr							{ /* Do nothing, go on. */ }
-		| error ',' let_list					{ /* Do nothing, go on. */ }
+		| error IN expr							{ 
+			if (VERBOSE_ERRORS) { 
+				cerr << "Syntax error in the let variable declaration." << endl; 		
+		}}
+		| error ',' let_list					{ 
+			if (VERBOSE_ERRORS) { 
+				cerr << "Syntax error in the let variable declaration." << endl; 		
+		}}
 		;
 /* end of grammar */
 %%
