@@ -6,6 +6,7 @@
 #include "semant.h"
 #include "utilities.h"
 
+#include <vector>
 extern int semant_debug;
 extern char *curr_filename;
 
@@ -94,12 +95,12 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
         
         // You can't define SELF_TYPE as a class.
         if (curr->getName() == SELF_TYPE){
-            semant_error(curr) << "SELF_TYPE redefined.\n";
+            semant_error(curr) << "Redefinition of basic class SELF_TYPE.\n";
 
         // You can't define classes that have been declared too.
         } else if (inher_map_.find(curr->getName()) != inher_map_.end()){
             semant_error(curr) 
-            	<< "Redefinition of Type " << curr->getName()->get_string()
+            	<< "Redefinition of class " << curr->getName()->get_string()
             	<< ". Ignoring the later definition.\n";
 
         // A fresh new class name, you are good to go.
@@ -127,9 +128,14 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 
         // Take current class.
         Class_ curr = it->second;
+
         // Label it as checked.
         checked[curr->getName()] = true;
         Symbol parent_name = curr->getParent();
+
+        // Vector to record dependency relation.
+        std::vector<Class_> dep;
+        dep.push_back(curr);
 
         // Either this class follows Object, or it's circular inherted.
         while (curr->getName() != Object 
@@ -138,26 +144,35 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
             // First of all... the parent must exists,
             if (inher_map_.find(parent_name) == inher_map_.end()){
                 semant_error(curr) 
-                	<< curr->getName()->get_string() << "has unmet parent for inhertance.\n";
+                	<< "Class" << curr->getName()->get_string() << " has undefined parent " 
+                	<< "class" << parent_name->get_string() << " for inhertance.\n";
                 break;
 
             // and is not one of the following...
             } else if (parent_name == SELF_TYPE || parent_name == Int 
                     || parent_name == Bool || parent_name == Str) {
-                semant_error(curr) << curr->getName()->get_string() 
-                	<< "inherts from one of the following if illegal: SELF_TYPE, Int, Bool, Str\n";
+                semant_error(curr) << "Class" << curr->getName()->get_string() 
+                	<< " inherts from one of the following: SELF_TYPE, Int, Bool, Str,"
+                	<< " which is illegal.\n";
                 break;
 
             // then find the grand-parent.
             } else {
                 curr = inher_map_[parent_name];
                 checked[curr->getName()] = true;
+                dep.push_back(curr);
                 parent_name = curr->getParent();
             }
         }
         // After all the searching for my parent, I found myself?
         if (parent_name ==  it->second->getName()){
-            semant_error(it->second) << "Circular inhertance found.\n";
+            semant_error(it->second) << "Circular inhertance found: ";
+            for(unsigned int i=0; i<dep.size(); i++){
+            	error_stream << dep[i]->getName()->get_string() << " -> ";
+            	if (i == dep.size() -1){
+            		error_stream << it->second->getName()->get_string() << ".\n";
+            	}
+            }
         }
     }
 
