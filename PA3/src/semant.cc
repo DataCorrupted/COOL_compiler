@@ -98,7 +98,9 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 
         // You can't define classes that have been declared too.
         } else if (inher_map_.find(curr->getName()) != inher_map_.end()){
-            semant_error(curr) << "Redefinition of this class. Ignoring the later definition.\n";
+            semant_error(curr) 
+            	<< "Redefinition of Type " << curr->getName()->get_string()
+            	<< ". Ignoring the later definition.\n";
 
         // A fresh new class name, you are good to go.
         } else {
@@ -111,10 +113,14 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
     /* We use a map to record if one class has been checked.*/
     // Construct a map with all flags saying not checked yet.
     std::map<Symbol, bool> checked;
-    for(auto it = inher_map_.begin(); it != inher_map_.end(); ++it){
+    for(std::map<Symbol, Class_>::iterator it = inher_map_.begin(); 
+      it != inher_map_.end(); 
+      ++it){
         checked.insert(std::pair<Symbol, bool>(it->first, false));
     }
-    for (auto it = inher_map_.begin(); it != inher_map_.end(); ++it){
+    for (std::map<Symbol, Class_>::iterator it = inher_map_.begin(); 
+      it != inher_map_.end(); 
+      ++it){
 
         // This class is checked before, we move on.
         if (checked[it->first]) { continue; }
@@ -131,15 +137,15 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 
             // First of all... the parent must exists,
             if (inher_map_.find(parent_name) == inher_map_.end()){
-                semant_error(curr) << 
-                    "Unmet parent for inhertance.\n";
+                semant_error(curr) 
+                	<< curr->getName()->get_string() << "has unmet parent for inhertance.\n";
                 break;
 
             // and is not one of the following...
             } else if (parent_name == SELF_TYPE || parent_name == Int 
                     || parent_name == Bool || parent_name == Str) {
-                semant_error(curr) << 
-                    "inhertance from one of the following if illegal: SELF_TYPE, Int, Bool, Str\n";
+                semant_error(curr) << curr->getName()->get_string() 
+                	<< "inherts from one of the following if illegal: SELF_TYPE, Int, Bool, Str\n";
                 break;
 
             // then find the grand-parent.
@@ -149,9 +155,14 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
                 parent_name = curr->getParent();
             }
         }
+        // After all the searching for my parent, I found myself?
         if (parent_name ==  it->second->getName()){
             semant_error(it->second) << "Circular inhertance found.\n";
         }
+    }
+
+    if (inher_map_.find(Main) == inher_map_.end()){
+    	semant_error() << "Class Main not found.\n";
     }
 }
 
