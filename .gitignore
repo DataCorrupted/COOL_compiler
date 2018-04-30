@@ -1,7 +1,5 @@
 *.pdf
 */tools-bin/*
-lex.yy.c
-*lexer*
 *O*
 !*README.md
 *tmp*
