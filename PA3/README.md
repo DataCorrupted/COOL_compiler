@@ -1,27 +1,26 @@
-# PA2: cool parser
+# PA3: cool semantic analysis
 
 This folder originates from Stanford CS143. Missing folders and files(mainly binary, which is not suitable for git) can be retrived from their [couse page](http://web.stanford.edu/class/cs143/).(Or [ShanghaiTech](http://sist.shanghaitech.edu.cn/faculty/songfu/course/spring2018/CS131/)'s CS131 should the course page work by the time you see this.)
 
 ## src
 
-	cool.y 		is my code. You can read them or modify them.
+	semant.(cc/h)	are my code. You can read them or modify them.
+	cool-tree.h* 	also my code.
 	Makefile 	Use command "make" to generate a binary. You should not modify them.
-	cool.output 	After you _make_, this file will be generated to illustrate the state machine 
-			of the parser.
 
 ## test
 
-	bison_test_(good/bad).cl 
-			provided correct and wrong code by Shanghaitech.
-	unit 		unit test written by my self.
+	(good/bad).cl 	are provided test. 
+	unit/ 		I will write my own unit test when I have time.
+
 ## scripts
 
 	compiler.sh 	While compling can be tiresome, I write a script for that. It will generate
-			a binary and put it in PA2/
+			a binary and put it in PA3/
 	cmp.sh <file>	will compile your code, run lexer and compare your parser's output and 
-			official's(tools-bin	/parser) given the input <file> you specified.
+			official's(tools-bin/semant) given the input <file> you specified.
 
-The environment for these two scripts should be in _PA2/_, or they may not work. Run them by
+The environment for these two scripts should be in _PA3/_, or they may not work. Run them by
 	
 	./scripts/<script>.sh {file}
 

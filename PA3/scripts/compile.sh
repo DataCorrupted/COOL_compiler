@@ -1,5 +1,5 @@
 cd src/
-make
+make semant
 cp semant ../
 shopt -s extglob
 rm *.o 

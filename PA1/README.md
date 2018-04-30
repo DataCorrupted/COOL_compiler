@@ -10,9 +10,9 @@ This folder originates from Stanford CS143. Missing folders and files(mainly bin
 ## test
 
 	unit/ 		includes all the unit test I wrote for testing each components.
+	public_testcases/
+			test cases we used to grade.
 	flex_test.cl 	is the test file provided by CS143. It's tiny.
-	examples/ 	conatins all the codes I found from Github. It's not my work. You may check 
-			the README.md inside that folder to find the writer(https://github.com/shinezyy/).
 
 ## scripts
 
@@ -28,3 +28,16 @@ The environment for these two scripts should be in _PA1/_, or they may not work.
 ## cool-support
 
 cool-support is provided by CS143, yet it contains some important files that you should really read and understand.
+
+# Final grade
+
+You can find the test cases we used in _test/public_testcases_.
+I got the following wrong.
+
+	bothcomments 				mixing the two types of comments
+	endcomment				The end comment token by itself
+	escapednull 				escaped null char in a string
+	longstring_escapedbackslashes		long strings with escaped characters
+	pathologicalstrings			some pathological strings
+	s32					end of comment without start
+	wq0607-c2				sequences of block comments and strings
