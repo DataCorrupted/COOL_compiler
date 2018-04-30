@@ -3,10 +3,10 @@
 	cgen
 	lexer
 	parser
-	semat
+	semant
 
 But since they are binary they are not priviliged enough to enter git :). 
 
 You should retrive them yourself.
 
-Notice that without _lexer_ and _parser_, script _../scripts/cmp.sh_ won't work.
+Notice that without _lexer_ and _parser_, _semat_, script _../scripts/cmp.sh_ won't work.

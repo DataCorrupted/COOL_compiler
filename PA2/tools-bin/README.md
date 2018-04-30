@@ -3,7 +3,7 @@
 	cgen
 	lexer
 	parser
-	semat
+	semant
 
 But since they are binary they are not priviliged enough to enter git :). 
 
