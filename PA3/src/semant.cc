@@ -6,7 +6,6 @@
 #include "semant.h"
 #include "utilities.h"
 
-
 extern int semant_debug;
 extern char *curr_filename;
 
@@ -85,8 +84,75 @@ static void initialize_constants(void)
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
 
-    /* Fill this in */
+    /* Let's construct the basic classes first. */
+    install_basic_classes();
 
+    /* Check the usage and the exsitence of each Symbol first.  */
+    for (int i = classes->first(); classes->more(i); i = classes->next(i)){
+
+        Class_ curr = classes->nth(i);
+        
+        // You can't define SELF_TYPE as a class.
+        if (curr->getName() == SELF_TYPE){
+            semant_error(curr) << "SELF_TYPE redefined.\n";
+
+        // You can't define classes that have been declared too.
+        } else if (inher_map_.find(curr->getName()) != inher_map_.end()){
+            semant_error(curr) << "Redefinition of this class. Ignoring the later definition.\n";
+
+        // A fresh new class name, you are good to go.
+        } else {
+            inher_map_.insert(std::pair<Symbol, Class_>(curr->getName(), curr));
+        }
+    }
+
+    /* Check for inhertance correctness.                    */
+    /* To guarantee speed, we only check one class once.    */
+    /* We use a map to record if one class has been checked.*/
+    // Construct a map with all flags saying not checked yet.
+    std::map<Symbol, bool> checked;
+    for(auto it = inher_map_.begin(); it != inher_map_.end(); ++it){
+        checked.insert(std::pair<Symbol, bool>(it->first, false));
+    }
+    for (auto it = inher_map_.begin(); it != inher_map_.end(); ++it){
+
+        // This class is checked before, we move on.
+        if (checked[it->first]) { continue; }
+
+        // Take current class.
+        Class_ curr = it->second;
+        // Label it as checked.
+        checked[curr->getName()] = true;
+        Symbol parent_name = curr->getParent();
+
+        // Either this class follows Object, or it's circular inherted.
+        while (curr->getName() != Object 
+            && parent_name != it->second->getName()){
+
+            // First of all... the parent must exists,
+            if (inher_map_.find(parent_name) == inher_map_.end()){
+                semant_error(curr) << 
+                    "Unmet parent for inhertance.\n";
+                break;
+
+            // and is not one of the following...
+            } else if (parent_name == SELF_TYPE || parent_name == Int 
+                    || parent_name == Bool || parent_name == Str) {
+                semant_error(curr) << 
+                    "inhertance from one of the following if illegal: SELF_TYPE, Int, Bool, Str\n";
+                break;
+
+            // then find the grand-parent.
+            } else {
+                curr = inher_map_[parent_name];
+                checked[curr->getName()] = true;
+                parent_name = curr->getParent();
+            }
+        }
+        if (parent_name ==  it->second->getName()){
+            semant_error(it->second) << "Circular inhertance found.\n";
+        }
+    }
 }
 
 void ClassTable::install_basic_classes() {
@@ -188,6 +254,13 @@ void ClassTable::install_basic_classes() {
 						      Str, 
 						      no_expr()))),
 	       filename);
+
+    // Add premitive classes.
+    inher_map_.insert(std::pair<Symbol, Class_>(Object, Object_class));
+    inher_map_.insert(std::pair<Symbol, Class_>(IO, IO_class));
+    inher_map_.insert(std::pair<Symbol, Class_>(Int, Int_class));
+    inher_map_.insert(std::pair<Symbol, Class_>(Bool, Bool_class));
+    inher_map_.insert(std::pair<Symbol, Class_>(Str, Str_class));
 }
 
 ////////////////////////////////////////////////////////////////////

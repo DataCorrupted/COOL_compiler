@@ -36,6 +36,8 @@ public:
    tree_node *copy()		 { return copy_Class_(); }
    virtual Class_ copy_Class_() = 0;
 
+   virtual Symbol getName() = 0;
+   virtual Symbol getParent() = 0;
 #ifdef Class__EXTRAS
    Class__EXTRAS
 #endif
@@ -161,6 +163,9 @@ public:
    }
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
+
+   Symbol getName() { return name; };
+   Symbol getParent() { return parent; };
 
 #ifdef Class__SHARED_EXTRAS
    Class__SHARED_EXTRAS

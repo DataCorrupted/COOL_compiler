@@ -8,6 +8,8 @@
 #include "symtab.h"
 #include "list.h"
 
+#include <map>
+
 #define TRUE 1
 #define FALSE 0
 
@@ -24,6 +26,8 @@ private:
   int semant_errors;
   void install_basic_classes();
   ostream& error_stream;
+
+  std::map<Symbol, Class_> inher_map_;
 
 public:
   ClassTable(Classes);
