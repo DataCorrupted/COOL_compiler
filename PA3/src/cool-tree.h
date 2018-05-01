@@ -53,6 +53,7 @@ public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
    virtual bool isAttribute() = 0;
+   virtual Symbol getName() = 0;
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -66,6 +67,7 @@ class Formal_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
+   virtual Symbol getType() = 0;
 
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
@@ -178,6 +180,7 @@ public:
 };
 
 
+typedef class method_class *Method;
 // define constructor - method
 class method_class : public Feature_class {
 protected:
@@ -195,6 +198,9 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    bool isAttribute() { return false; }
+   Symbol getName() { return name; }
+   Formals getFormals() { return formals; }
+   Symbol getReturnType() { return return_type; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -220,6 +226,7 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    bool isAttribute() { return true; }
+   Symbol getName() { return name; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -243,6 +250,7 @@ public:
    Formal copy_Formal();
    void dump(ostream& stream, int n);
 
+   Symbol getType() { return type_decl; }
 #ifdef Formal_SHARED_EXTRAS
    Formal_SHARED_EXTRAS
 #endif

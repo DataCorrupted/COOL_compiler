@@ -6,6 +6,7 @@
 #include "semant.h"
 #include "utilities.h"
 
+#include <string>
 #include <vector>
 extern int semant_debug;
 extern char *curr_filename;
@@ -103,7 +104,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
     install_basic_classes();
 
     /* Check the usage and the exsitence of each Symbol first.  */
-    for (int i = classes->first(); classes->more(i); i = classes->next(i)){
+    for (int i = 0; i < classes->len(); i++){
 
         Class_ curr = classes->nth(i);
         
@@ -302,22 +303,44 @@ void ClassTable::install_basic_classes() {
     inher_map_.insert(std::pair<Symbol, Class_>(Str, Str_class));
 }
 
+std::string getMethodSignature(Method m){
+	std::string signature;
+	// Add method name.
+	signature.append(m->getName()->get_string());
+	
+	// Add formals.
+	signature.append("(");
+	Formals formals = m->getFormals();
+	for (int i=0; i<formals->len(); i++){
+		signature.append(formals->nth(i)->getType()->get_string());
+		if (i != formals->len() - 1){
+			signature.append(", ");
+		}
+	}
+	signature.append("): ");
+
+	// Add return type.
+	signature.append(m->getReturnType()->get_string());
+	signature.append(";");
+	return signature;
+}
 void ClassTable::collectMethods(Class_ c){
 
 	// We always check parent first if it's not checked. 
 	// We don't have worry about circular dependency,
 	// as it has been taken care of.
-	if (!checked_[c->getParent()]){
+	// We don't ask for Object's parent.
+	if (c->getName() != Object && !checked_[c->getParent()]){
 		collectMethods(inher_map_.find(c->getParent())->second);
 	}
 
 	// Use of copy constructor, 
 	// every method belongs to my parent(s) belongs to me.
 	method_map_[c->getName()] 
-		= std::map<Symbol, method_class>(method_map_[c->getParent()]);
+		= std::map<Symbol, Method>(method_map_[c->getParent()]);
 
 	Features features = c->getFeatures();
-	for (int i = features->first(); features->more(i); features->next(i)){
+	for (int i = 0; i < features->len(); i++){
 		
 		Feature f = features->nth(i);
 
@@ -326,7 +349,43 @@ void ClassTable::collectMethods(Class_ c){
 			continue;
 		}
 
-		
+		Method m = (Method) f;
+		if (hasKeyInMap(m->getName(), method_map_[c->getName()])) {
+			Method parent_method = method_map_[c->getName()][f->getName()];
+			Formals parent_formals = parent_method->getFormals();
+
+			Formals m_formals = m->getFormals();
+
+			bool legal_inhertance = true;
+			// Different number of formals or different return type.
+			if (m_formals->len() !=  parent_formals->len() 
+			  || m->getReturnType() != parent_method->getReturnType()){
+				legal_inhertance = false;
+
+			// Or we have to check if all formals are the same.
+			} else {
+				for (int j = 0; j < m_formals->len(); j++){
+					if (m_formals->nth(j)->getType() != parent_formals->nth(j)->getType()){
+						legal_inhertance = false;		
+						break;			
+					}
+				}
+			}
+			if (!legal_inhertance){
+				semant_error(c) 
+					<< "Class " << c->getName()->get_string()
+					<< " has method: " << getMethodSignature(m)
+					<< "\n\twhich disagrees with it's parents' method: "
+					<< getMethodSignature(parent_method) << "\n"
+				;
+			}
+		} else {
+			method_map_[c->getName()]
+				.insert(
+					std::pair<Symbol, Method>(f->getName(), m)
+				);
+		}
+
 
 	}
 	// Label this class as been checked.
@@ -399,7 +458,6 @@ void program_class::semant()
 
     /* ClassTable constructor may do some semantic analysis */
     ClassTable *classtable = new ClassTable(classes);
-    
     // Error encountered when constructing class table. 
     // Inhertance relation is not clear. Abort.
     if (classtable->errors()) {
@@ -408,7 +466,14 @@ void program_class::semant()
         exit(1);
     }
 
-    //classtable->checkMethodInheritance();
+    /* Check for method inhertance correctness. */
+    classtable->checkMethodInheritance();
+    if (classtable->errors()) {
+        cerr << "Compilation halted due to static semantic errors." << endl;
+        delete classtable;
+        exit(1);
+    }
+
 
     /* some semantic analysis code may go here */
 

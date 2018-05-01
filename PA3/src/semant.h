@@ -32,7 +32,7 @@ private:
   std::map<Symbol, bool> checked_;
 
   // method_map[class_name][method_name] = method.
-  std::map<Symbol, std::map<Symbol, method_class> > method_map_;
+  std::map<Symbol, std::map<Symbol, Method> > method_map_;
 
 public:
   ClassTable(Classes);
