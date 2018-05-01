@@ -327,20 +327,22 @@ std::string getMethodSignature(Method m){
 	signature.append(";");
 	return signature;
 }
-void ClassTable::collectMethods(Class_ c){
+void ClassTable::collectFeatures(Class_ c){
 
 	// We always check parent first if it's not checked. 
 	// We don't have worry about circular dependency,
 	// as it has been taken care of.
 	// We don't ask for Object's parent.
 	if (c->getName() != Object && !checked_[c->getParent()]){
-		collectMethods(inher_map_.find(c->getParent())->second);
+		collectFeatures(inher_map_.find(c->getParent())->second);
 	}
 
 	// Use of copy constructor, 
 	// every method belongs to my parent(s) belongs to me.
 	method_map_[c->getName()] 
 		= std::map<Symbol, Method>(method_map_[c->getParent()]);
+	attr_map_[c->getName()]
+		= std::map<Symbol, Symbol>(attr_map_[c->getParent()]);
 
 	Features features = c->getFeatures();
 	for (int i = 0; i < features->len(); i++){
@@ -374,7 +376,6 @@ void ClassTable::collectMethods(Class_ c){
 					);
 			}
 		} else {
-
 			Method m = (Method) f;
 			// In it's parent's method table, this is a inherited method.
 			if (hasKeyInMap(m->getName(), method_map_[c->getParent()])) {
@@ -428,7 +429,7 @@ void ClassTable::collectMethods(Class_ c){
 	checked_[c->getName()] = true;
 }
 
-void ClassTable::checkMethodInheritance(){
+void ClassTable::checkFeatureInheritance(){
 	checked_ = initCheckMap(inher_map_);
 	for (std::map<Symbol, Class_>::iterator iter = inher_map_.begin();
 	  iter != inher_map_.end();
@@ -436,15 +437,46 @@ void ClassTable::checkMethodInheritance(){
 		if (checked_[iter->first]){
 			continue;
 		} else {
-			collectMethods(iter->second);
+			collectFeatures(iter->second);
 		}
 	}
 }
 
 
 void ClassTable::checkMethodsType(Class_ c){
+	// It's not necessary anymore whether father or son goes first.
+	// But we still did it anyway.
 	if (c->getName() != Object && !checked_[c->getName()]){
 		checkMethodsType(inher_map_.find(c->getParent())->second);
+	}
+
+	// Add every attribute of this class to symbol table.
+	SymbolTable<Symbol, Symbol> tbl;
+	tbl.enterscope();
+	for (std::map<Symbol, Symbol>::iterator iter = attr_map_[c].begin();
+	  iter != attr_map_[c].end();
+	  ++iter){
+		tbl.addid(iter->first, &(iter->second));
+	}
+
+	// Check for each method.
+	for (std::map<Symbol, Method>::iterator iter = method_map_[c].begin();
+	  iter != method_map_[c].end();
+	  ++iter){
+	  	Method m = iter->second
+
+	  	// Each expression will be assigned a type inside getExpressionType().
+		Symbol returned_type = getExpressionType(m->getExpr(), tbl);
+
+		// Check failed.
+		if (returned_type != no_expr && returned_type != m->getType()){
+			
+			semant_error(c->get_filename(), m)
+				<< "Method " << c->getName() << "." << m->getName()
+				<< "expected return type: " << m->getType() << ", "
+				<< "got return type: " << returned_type << "."
+			;
+		}
 	}
 }
 void ClassTable::checkEachClassType(){
@@ -521,7 +553,7 @@ void program_class::semant()
     }
 
     /* Check for method inhertance correctness. */
-    classtable->checkMethodInheritance();
+    classtable->checkFeatureInheritance();
     if (classtable->errors()) {
         cerr << "Compilation halted due to static semantic errors." << endl;
         delete classtable;

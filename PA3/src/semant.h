@@ -37,8 +37,8 @@ private:
 
 public:
   ClassTable(Classes);
-  void checkMethodInheritance();
-    void collectMethods(Class_);
+  void checkFeatureInheritance();
+    void collectFeatures(Class_);
   void checkEachClassType();
     void checkMethodsType(Class_);
 
