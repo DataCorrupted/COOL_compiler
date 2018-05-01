@@ -39,6 +39,7 @@ public:
    virtual Symbol getName() = 0;
    virtual Symbol getParent() = 0;
    virtual Features getFeatures() = 0;
+   virtual Symbol getFilename() = 0;
 #ifdef Class__EXTRAS
    Class__EXTRAS
 #endif
@@ -170,6 +171,7 @@ public:
    Symbol getName() { return name; };
    Symbol getParent() { return parent; };
    Features getFeatures() { return features; };
+   Symbol getFilename() { return filename; };
 
 #ifdef Class__SHARED_EXTRAS
    Class__SHARED_EXTRAS
@@ -210,7 +212,7 @@ public:
 #endif
 };
 
-
+typedef class attr_class *Attribute;
 // define constructor - attr
 class attr_class : public Feature_class {
 protected:
@@ -227,6 +229,7 @@ public:
    void dump(ostream& stream, int n);
    bool isAttribute() { return true; }
    Symbol getName() { return name; }
+   Symbol getType() { return type_decl; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS

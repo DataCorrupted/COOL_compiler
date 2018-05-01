@@ -118,7 +118,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
         // You can't define classes that have been declared too.
         } else if (hasKeyInMap(curr->getName(), inher_map_)){
             semant_error(curr) 
-            	<< "Redefinition of class " << curr->getName()->get_string()
+            	<< "Redefinition of class " << curr->getName()
             	<< ". Ignoring the later definition.\n";
 
         // A fresh new class name, you are good to go.
@@ -161,14 +161,14 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
             // First of all... the parent must exists,
             if (!hasKeyInMap(parent_name, inher_map_)){
                 semant_error(curr) 
-                	<< "Class " << curr->getName()->get_string() << " has undefined parent " 
-                	<< "class " << parent_name->get_string() << " for inhertance.\n";
+                	<< "Class " << curr->getName() << " has undefined parent " 
+                	<< "class " << parent_name << " for inhertance.\n";
                 break;
 
             // and is not one of the following...
             } else if (parent_name == SELF_TYPE || parent_name == Int 
                     || parent_name == Bool || parent_name == Str) {
-                semant_error(curr) << "Class" << curr->getName()->get_string() 
+                semant_error(curr) << "Class" << curr->getName() 
                 	<< " inherts from one of the following: SELF_TYPE, Int, Bool, Str,"
                 	<< " which is illegal.\n";
                 break;
@@ -185,9 +185,9 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
         if (parent_name ==  iter->second->getName()){
             semant_error(iter->second) << "Circular inhertance found: ";
             for(unsigned int i=0; i<dep.size(); i++){
-            	error_stream << dep[i]->getName()->get_string() << " -> ";
+            	error_stream << dep[i]->getName() << " -> ";
             	if (i == dep.size() -1){
-            		error_stream << iter->second->getName()->get_string() << ".\n";
+            		error_stream << iter->second->getName() << ".\n";
             	}
             }
         }
@@ -345,7 +345,7 @@ void ClassTable::collectMethods(Class_ c){
 	Features features = c->getFeatures();
 	for (int i = 0; i < features->len(); i++){
 		
-		Feature f = features->nth(i);
+	  Feature f = features->nth(i);
 
 		// We don't have anything to do with attributes now.
 		// Acturally, you can use:
@@ -353,57 +353,76 @@ void ClassTable::collectMethods(Class_ c){
 		// but I think that would make the code too hard to read.
 		// Also, I find out too late...
 		if (f->isAttribute()){ 
-			continue;
-		}
-
-		Method m = (Method) f;
-		// In it's parent's method table, this is a inherited method.
-		if (hasKeyInMap(m->getName(), method_map_[c->getParent()])) {
-			Method parent_method = method_map_[c->getName()][f->getName()];
-			Formals parent_formals = parent_method->getFormals();
-
-			Formals m_formals = m->getFormals();
-
-			bool legal_inhertance = true;
-			// Different number of formals or different return type.
-			if (m_formals->len() !=  parent_formals->len() 
-			  || m->getReturnType() != parent_method->getReturnType()){
-				legal_inhertance = false;
-
-			// Or we have to check if all formals are the same.
+			Attribute a  = (Attribute) f;
+			if (hasKeyInMap(a->getName(), attr_map_[c->getParent()])){
+				semant_error(c->getFilename(), f) 
+					<< "Class " << c->getName()
+					<< " has attribute: " << a->getName()
+					<< " which has already been defined in it's parent class."
+				;
+			} else if (hasKeyInMap(a->getName(), attr_map_[c->getName()])) {
+				semant_error(c->getFilename(), f) 
+					<< "Class " << c->getName()
+					<< " has attribute: " << a->getName()
+					<< " which duplicats with the one defined in "
+					<< c->getFilename() << ":" << a->get_line_number()
+				;			
 			} else {
-				for (int j = 0; j < m_formals->len(); j++){
-					if (m_formals->nth(j)->getType() != parent_formals->nth(j)->getType()){
-						legal_inhertance = false;		
-						break;			
+				attr_map_[c->getName()]
+					.insert(
+						std::pair<Symbol, Symbol>(a->getName(), a->getType())
+					);
+			}
+		} else {
+
+			Method m = (Method) f;
+			// In it's parent's method table, this is a inherited method.
+			if (hasKeyInMap(m->getName(), method_map_[c->getParent()])) {
+				Method parent_method = method_map_[c->getName()][f->getName()];
+				Formals parent_formals = parent_method->getFormals();
+
+				Formals m_formals = m->getFormals();
+
+				bool legal_inhertance = true;
+				// Different number of formals or different return type.
+				if (m_formals->len() !=  parent_formals->len() 
+				  || m->getReturnType() != parent_method->getReturnType()){
+					legal_inhertance = false;
+
+				// Or we have to check if all formals are the same.
+				} else {
+					for (int j = 0; j < m_formals->len(); j++){
+						if (m_formals->nth(j)->getType() != parent_formals->nth(j)->getType()){
+							legal_inhertance = false;		
+							break;			
+						}
 					}
 				}
-			}
-			if (!legal_inhertance){
-				semant_error(c) 
-					<< "Class " << c->getName()->get_string()
-					<< " has method: " << getMethodSignature(m)
-					<< "\n\twhich disagrees with it's parents' method: "
-					<< getMethodSignature(parent_method) << "\n"
-				;
+				if (!legal_inhertance){
+					semant_error(c->getFilename(), f) 
+						<< "Class " << c->getName()
+						<< " has method: " << getMethodSignature(m)
+						<< "\n\twhich disagrees with it's parents' method: "
+						<< getMethodSignature(parent_method) << "\n"
+					;
+				}
+
+			// In itself's method table, this is a duplicated method.
+			} else if (hasKeyInMap(m->getName(), method_map_[c->getName()]))  {
+				semant_error(c->getFilename(), f)
+					<< "Class " << c->getName()
+					<< " has duplicated methods. We will ignore the later definition, " 
+					<< "which has the signature: " << 	getMethodSignature(m) << "\n";
+
+			// We got a new method!
+			} else {
+				method_map_[c->getName()]
+					.insert(
+						std::pair<Symbol, Method>(f->getName(), m)
+					);
 			}
 
-		// In itself's method table, this is a duplicated method.
-		} else if (hasKeyInMap(m->getName(), method_map_[c->getName()]))  {
-			semant_error(c)
-				<< "Class " << c->getName()->get_string()
-				<< " has duplicated methods. We will ignore the later definition, " 
-				<< "which has the signature: " << 	getMethodSignature(m) << "\n";
-
-		// We got a new method!
-		} else {
-			method_map_[c->getName()]
-				.insert(
-					std::pair<Symbol, Method>(f->getName(), m)
-				);
 		}
-
-
 	}
 	// Label this class as been checked.
 	checked_[c->getName()] = true;
@@ -422,6 +441,24 @@ void ClassTable::checkMethodInheritance(){
 	}
 }
 
+
+void ClassTable::checkMethodsType(Class_ c){
+	if (c->getName() != Object && !checked_[c->getName()]){
+		checkMethodsType(inher_map_.find(c->getParent())->second);
+	}
+}
+void ClassTable::checkEachClassType(){
+	checked_ = initCheckMap(inher_map_);
+	for (std::map<Symbol, Class_>::iterator iter = inher_map_.begin();
+	  iter != inher_map_.end();
+	  ++iter){
+		if (checked_[iter->first]){
+			continue;
+		} else {
+			checkMethodsType(iter->second);
+		}
+	}
+}
 ////////////////////////////////////////////////////////////////////
 //
 // semant_error is an overloaded function for reporting errors
@@ -491,6 +528,7 @@ void program_class::semant()
         exit(1);
     }
 
+    classtable->checkEachClassType();
 
     // Memory SAFETY!!
     delete classtable;

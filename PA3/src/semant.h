@@ -33,11 +33,14 @@ private:
 
   // method_map[class_name][method_name] = method.
   std::map<Symbol, std::map<Symbol, Method> > method_map_;
+  std::map<Symbol, std::map<Symbol, Symbol> > attr_map_;
 
 public:
   ClassTable(Classes);
   void checkMethodInheritance();
     void collectMethods(Class_);
+  void checkEachClassType();
+    void checkMethodsType(Class_);
 
   int errors() { return semant_errors; }
   ostream& semant_error();
