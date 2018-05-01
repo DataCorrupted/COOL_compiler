@@ -82,7 +82,21 @@ static void initialize_constants(void)
 }
 
 
+template <class K, class V>
+std::map<K, bool> ClassTable::initCheckMap(std::map<K, V>& tmpl_map){
+    std::map<K, bool> checked;
+    for(typename std::map<K, V>::iterator iter = tmpl_map.begin(); 
+      iter != tmpl_map.end(); 
+      ++iter){
+        checked.insert(std::pair<K, bool>(iter->first, false));
+    }	
+    return checked;
+}
 
+template <class K, class V>
+bool ClassTable::hasKeyInMap(K key, std::map<K, V> map_){
+	return map_.find(key) != map_.end();
+}
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
 
     /* Let's construct the basic classes first. */
@@ -98,7 +112,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
             semant_error(curr) << "Redefinition of basic class SELF_TYPE.\n";
 
         // You can't define classes that have been declared too.
-        } else if (inher_map_.find(curr->getName()) != inher_map_.end()){
+        } else if (hasKeyInMap(curr->getName(), inher_map_)){
             semant_error(curr) 
             	<< "Redefinition of class " << curr->getName()->get_string()
             	<< ". Ignoring the later definition.\n";
@@ -116,24 +130,20 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
     /* from O(N2) to O(N) 									*/
     
     // Construct a map with all flags saying not checked yet.
-    std::map<Symbol, bool> checked;
-    for(std::map<Symbol, Class_>::iterator iter = inher_map_.begin(); 
-      iter != inher_map_.end(); 
-      ++iter){
-        checked.insert(std::pair<Symbol, bool>(iter->first, false));
-    }
+    // checked is a member of this class.
+    checked_ = initCheckMap(inher_map_);
     for (std::map<Symbol, Class_>::iterator iter = inher_map_.begin(); 
       iter != inher_map_.end(); 
       ++iter){
 
         // This class is checked before, we move on.
-        if (checked[iter->first]) { continue; }
+        if (checked_[iter->first]) { continue; }
 
         // Take current class.
         Class_ curr = iter->second;
 
         // Label it as checked.
-        checked[curr->getName()] = true;
+        checked_[curr->getName()] = true;
         Symbol parent_name = curr->getParent();
 
         // Vector to record dependency relation.
@@ -145,10 +155,10 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
             && parent_name != iter->second->getName()){
 
             // First of all... the parent must exists,
-            if (inher_map_.find(parent_name) == inher_map_.end()){
+            if (!hasKeyInMap(parent_name, inher_map_)){
                 semant_error(curr) 
-                	<< "Class" << curr->getName()->get_string() << " has undefined parent " 
-                	<< "class" << parent_name->get_string() << " for inhertance.\n";
+                	<< "Class " << curr->getName()->get_string() << " has undefined parent " 
+                	<< "class " << parent_name->get_string() << " for inhertance.\n";
                 break;
 
             // and is not one of the following...
@@ -162,7 +172,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
             // then find the grand-parent.
             } else {
                 curr = inher_map_[parent_name];
-                checked[curr->getName()] = true;
+                checked_[curr->getName()] = true;
                 dep.push_back(curr);
                 parent_name = curr->getParent();
             }
@@ -179,7 +189,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
         }
     }
 
-    if (inher_map_.find(Main) == inher_map_.end()){
+    if (!hasKeyInMap(Main, inher_map_)){
     	semant_error() << "Class Main not found.\n";
     }
 }
@@ -292,6 +302,50 @@ void ClassTable::install_basic_classes() {
     inher_map_.insert(std::pair<Symbol, Class_>(Str, Str_class));
 }
 
+void ClassTable::collectMethods(Class_ c){
+
+	// We always check parent first if it's not checked. 
+	// We don't have worry about circular dependency,
+	// as it has been taken care of.
+	if (!checked_[c->getParent()]){
+		collectMethods(inher_map_.find(c->getParent())->second);
+	}
+
+	// Use of copy constructor, 
+	// every method belongs to my parent(s) belongs to me.
+	method_map_[c->getName()] 
+		= std::map<Symbol, method_class>(method_map_[c->getParent()]);
+
+	Features features = c->getFeatures();
+	for (int i = features->first(); features->more(i); features->next(i)){
+		
+		Feature f = features->nth(i);
+
+		// We don't have anything to do with attributes now.
+		if (f->isAttribute()){ 
+			continue;
+		}
+
+		
+
+	}
+	// Label this class as been checked.
+	checked_[c->getName()] = true;
+}
+
+void ClassTable::checkMethodInheritance(){
+	checked_ = initCheckMap(inher_map_);
+	for (std::map<Symbol, Class_>::iterator iter = inher_map_.begin();
+	  iter != inher_map_.end();
+	  ++iter){
+		if (checked_[iter->first]){
+			continue;
+		} else {
+			collectMethods(iter->second);
+		}
+	}
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // semant_error is an overloaded function for reporting errors
@@ -345,12 +399,19 @@ void program_class::semant()
 
     /* ClassTable constructor may do some semantic analysis */
     ClassTable *classtable = new ClassTable(classes);
+    
+    // Error encountered when constructing class table. 
+    // Inhertance relation is not clear. Abort.
+    if (classtable->errors()) {
+        cerr << "Compilation halted due to static semantic errors." << endl;
+        delete classtable;
+        exit(1);
+    }
+
+    //classtable->checkMethodInheritance();
 
     /* some semantic analysis code may go here */
 
-    if (classtable->errors()) {
-	cerr << "Compilation halted due to static semantic errors." << endl;
-	exit(1);
-    }
+    // Memory SAFETY!!
+    delete classtable;
 }
-

@@ -29,12 +29,27 @@ private:
 
   std::map<Symbol, Class_> inher_map_;
 
+  std::map<Symbol, bool> checked_;
+
+  // method_map[class_name][method_name] = method.
+  std::map<Symbol, std::map<Symbol, method_class> > method_map_;
+
 public:
   ClassTable(Classes);
+  void checkMethodInheritance();
+    void collectMethods(Class_);
+
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
+
+  template <class K, class V>
+  std::map<K, bool> initCheckMap(std::map<K, V>&);
+
+  template <class K, class V>
+  bool hasKeyInMap(K, std::map<K, V>);
+  std::map<Symbol, Class_>& getMap(){ return inher_map_; }
 };
 
 

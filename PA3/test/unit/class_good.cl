@@ -8,6 +8,9 @@ class Mid0 inherits Base {
 
 class Mid1 inherits Base {
 	mid : Int;
+	mid(): Int {
+		1
+	};
 };
 
 class Util inherits Mid1 {
@@ -28,6 +31,9 @@ class Bottom01 inherits Mid0 {
 
 class Bottom10 inherits Mid1{
 	b10 : Int;
+	mid(): Int {
+		1
+	};
 };	
 class Bottom11 inherits Mid1{
 	b11 : Int;
