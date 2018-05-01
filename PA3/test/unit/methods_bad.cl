@@ -15,7 +15,16 @@ class Base {
 
 class Mid inherits Base {
 	operator(arg: String): Int{ 1 };
+	something(): String{
+		"1"
+	};
 	something(): Int {
 		1
+	};
+	somethingelse(): Int {
+		1
+	};
+	somethingelse(): String{
+		"1"
 	};
 };

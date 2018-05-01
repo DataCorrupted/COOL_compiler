@@ -6,6 +6,9 @@
 #include "semant.h"
 #include "utilities.h"
 
+#include <typeinfo>
+#include <iostream>
+
 #include <string>
 #include <vector>
 extern int semant_debug;
@@ -345,12 +348,17 @@ void ClassTable::collectMethods(Class_ c){
 		Feature f = features->nth(i);
 
 		// We don't have anything to do with attributes now.
+		// Acturally, you can use:
+		// 		(typeid(*f) != typeid(method_class))
+		// but I think that would make the code too hard to read.
+		// Also, I find out too late...
 		if (f->isAttribute()){ 
 			continue;
 		}
 
 		Method m = (Method) f;
-		if (hasKeyInMap(m->getName(), method_map_[c->getName()])) {
+		// In it's parent's method table, this is a inherited method.
+		if (hasKeyInMap(m->getName(), method_map_[c->getParent()])) {
 			Method parent_method = method_map_[c->getName()][f->getName()];
 			Formals parent_formals = parent_method->getFormals();
 
@@ -379,6 +387,15 @@ void ClassTable::collectMethods(Class_ c){
 					<< getMethodSignature(parent_method) << "\n"
 				;
 			}
+
+		// In itself's method table, this is a duplicated method.
+		} else if (hasKeyInMap(m->getName(), method_map_[c->getName()]))  {
+			semant_error(c)
+				<< "Class " << c->getName()->get_string()
+				<< " has duplicated methods. We will ignore the later definition, " 
+				<< "which has the signature: " << 	getMethodSignature(m) << "\n";
+
+		// We got a new method!
 		} else {
 			method_map_[c->getName()]
 				.insert(
@@ -474,8 +491,6 @@ void program_class::semant()
         exit(1);
     }
 
-
-    /* some semantic analysis code may go here */
 
     // Memory SAFETY!!
     delete classtable;

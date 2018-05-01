@@ -201,7 +201,7 @@ public:
    Symbol getName() { return name; }
    Formals getFormals() { return formals; }
    Symbol getReturnType() { return return_type; }
-
+   
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
 #endif
