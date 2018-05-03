@@ -33,9 +33,14 @@ private:
 
   // method_map[class_name][method_name] = method.
   std::map<Symbol, std::map<Symbol, Method> > method_map_;
+  std::map<Symbol, std::map<Symbol, Symbol> > attr_map_;
 
 public:
   ClassTable(Classes);
+  void checkFeatureInheritance();
+    void collectFeatures(Class_);
+  void checkEachClassType();
+    void checkMethodsType(Class_);
   void checkMethodInheritance();
 
   // return no_expr
@@ -55,5 +60,6 @@ public:
   std::map<Symbol, Class_>& getMap(){ return inher_map_; }
 };
 
+//bool operator <= (Symbol, Symbol){ return true; };
 
 #endif
