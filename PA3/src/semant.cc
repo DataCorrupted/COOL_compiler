@@ -471,13 +471,10 @@ void ClassTable::checkMethodsType(Class_ c){
 
 	  	// Each expression will be assigned a type inside getExpressionType().
 	  	tbl.enterscope();
-	  	std::cout << "[Debug] Start" << std::endl;
 		Symbol returned_type = getExpressionType(m->getExpr(), tbl);
-		std::cout << "[Debug] Done" << std::endl;
-		std::cout << "NULL: " << (returned_type == NULL) << std::endl;
 		tbl.exitscope();
 		// Check failed.
-		if (returned_type != No_type && returned_type != m->getType()){
+		if (returned_type == No_type || returned_type == m->getType()){
 			
 			semant_error(c->get_filename(), m)
 				<< "Method " << c->getName() << "." << m->getName()
@@ -501,13 +498,24 @@ void ClassTable::checkEachClassType(){
 }
 
 Symbol ClassTable::getExpressionType( Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
-    std::cout << "Called once" << std::endl;
-    expr_in->dump(std::cout,0);
+    // TODO (jianxiong) early return
 
     // if expression type is no_expr, return NULL(no_expr)
-    if (expr_in-> get_type() == NULL){
+    if (typeid(*expr_in) == typeid(no_expr_class)){
+        expr_in->set_type(No_type);
         return NULL;
     }
+
+    // deal with all consts
+    // infer type for int_const
+    if (typeid(*expr_in) == typeid(int_const_class)){
+        int_const_class * expr_tmp = (int_const_class *) expr_in;
+        expr_tmp->set_type(Int);
+    }
+
+    // TODO (Deal with the rest of const)
+
+    std::cout << "Called once" << std::endl;
 
 	// if expression type is already inferred, return immediately
 	if (expr_in->get_type() != No_type){
@@ -529,7 +537,8 @@ Symbol ClassTable::getExpressionType( Expression expr_in, SymbolTable<Symbol, Sy
 	}
 
 
-	return expr_in->get_type();
+	// raise error if still no match
+    throw 6;
 
 }
 
