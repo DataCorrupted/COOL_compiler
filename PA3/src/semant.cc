@@ -467,8 +467,9 @@ void ClassTable::checkMethodsType(Class_ c){
 	  	Method m = iter->second;
 
 	  	// Each expression will be assigned a type inside getExpressionType().
+	  	tbl.enterscope();
 		Symbol returned_type = getExpressionType(m->getExpr(), tbl);
-
+		tbl.exitscope();
 		// Check failed.
 		if (returned_type != no_expr && returned_type != m->getType()){
 			
