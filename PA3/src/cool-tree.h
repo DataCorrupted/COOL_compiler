@@ -202,8 +202,9 @@ public:
    bool isAttribute() { return false; }
    Symbol getName() { return name; }
    Formals getFormals() { return formals; }
-   Symbol getReturnType() { return return_type; }
-   
+   Symbol getType() { return return_type; }
+   Expression getExpr() { return expr; }
+
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
 #endif

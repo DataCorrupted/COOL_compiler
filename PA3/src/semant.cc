@@ -323,7 +323,7 @@ std::string getMethodSignature(Method m){
 	signature.append("): ");
 
 	// Add return type.
-	signature.append(m->getReturnType()->get_string());
+	signature.append(m->getType()->get_string());
 	signature.append(";");
 	return signature;
 }
@@ -387,7 +387,7 @@ void ClassTable::collectFeatures(Class_ c){
 				bool legal_inhertance = true;
 				// Different number of formals or different return type.
 				if (m_formals->len() !=  parent_formals->len() 
-				  || m->getReturnType() != parent_method->getReturnType()){
+				  || m->getType() != parent_method->getType()){
 					legal_inhertance = false;
 
 				// Or we have to check if all formals are the same.
@@ -450,20 +450,21 @@ void ClassTable::checkMethodsType(Class_ c){
 		checkMethodsType(inher_map_.find(c->getParent())->second);
 	}
 
+	Symbol class_name = c->getName();
 	// Add every attribute of this class to symbol table.
 	SymbolTable<Symbol, Symbol> tbl;
 	tbl.enterscope();
-	for (std::map<Symbol, Symbol>::iterator iter = attr_map_[c].begin();
-	  iter != attr_map_[c].end();
+	for (std::map<Symbol, Symbol>::iterator iter = attr_map_[class_name].begin();
+	  iter != attr_map_[class_name].end();
 	  ++iter){
 		tbl.addid(iter->first, &(iter->second));
 	}
-
+/*
 	// Check for each method.
-	for (std::map<Symbol, Method>::iterator iter = method_map_[c].begin();
-	  iter != method_map_[c].end();
+	for (std::map<Symbol, Method>::iterator iter = method_map_[class_name].begin();
+	  iter != method_map_[class_name].end();
 	  ++iter){
-	  	Method m = iter->second
+	  	Method m = iter->second;
 
 	  	// Each expression will be assigned a type inside getExpressionType().
 		Symbol returned_type = getExpressionType(m->getExpr(), tbl);
@@ -477,7 +478,7 @@ void ClassTable::checkMethodsType(Class_ c){
 				<< "got return type: " << returned_type << "."
 			;
 		}
-	}
+	}*/
 }
 void ClassTable::checkEachClassType(){
 	checked_ = initCheckMap(inher_map_);

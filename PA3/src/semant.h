@@ -55,5 +55,6 @@ public:
   std::map<Symbol, Class_>& getMap(){ return inher_map_; }
 };
 
+//bool operator <= (Symbol, Symbol){ return true; };
 
 #endif
