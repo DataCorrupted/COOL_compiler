@@ -8,6 +8,8 @@
 
 #include <string>
 #include <vector>
+#include <typeinfo>
+
 extern int semant_debug;
 extern char *curr_filename;
 
@@ -405,6 +407,32 @@ void ClassTable::checkMethodInheritance(){
 	}
 }
 
+
+Symbol ClassTable::getExpressionType( Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
+	// if expression type is already inferred, return immediately
+	if (expr_in->get_type() != No_type){
+		return expr_in->get_type();
+	}
+
+    // check expression type and infer type
+    if (typeid(*expr_in) == typeid(assign_class)){
+		assign_class * expr_tmp = (assign_class *) expr_tmp;
+		// get the type from the sub-expression
+		Symbol type_tmp = getExpressionType(expr_tmp->get_expr(),scope_table);
+		expr_tmp->set_type(type_tmp);
+    }
+    else if (typeid(*expr_in) == typeid(new__class)){
+		new__class * expr_tmp = (new__class *) expr_tmp;
+		// get the type (new does not support recursive)
+		Symbol type_tmp = expr_tmp->get_type_name();
+		expr_tmp->set_type(type_tmp);
+	}
+
+
+	return expr_in->get_type();
+
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // semant_error is an overloaded function for reporting errors
@@ -480,3 +508,4 @@ void program_class::semant()
     // Memory SAFETY!!
     delete classtable;
 }
+

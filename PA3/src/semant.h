@@ -37,6 +37,9 @@ private:
 public:
   ClassTable(Classes);
   void checkMethodInheritance();
+
+  // return no_expr
+  Symbol getExpressionType( Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
     void collectMethods(Class_);
 
   int errors() { return semant_errors; }
