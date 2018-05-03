@@ -461,7 +461,8 @@ void ClassTable::checkMethodsType(Class_ c){
 	  ++iter){
 		tbl.addid(iter->first, &(iter->second));
 	}
-/*
+
+
 	// Check for each method.
 	for (std::map<Symbol, Method>::iterator iter = method_map_[class_name].begin();
 	  iter != method_map_[class_name].end();
@@ -470,10 +471,13 @@ void ClassTable::checkMethodsType(Class_ c){
 
 	  	// Each expression will be assigned a type inside getExpressionType().
 	  	tbl.enterscope();
+	  	std::cout << "[Debug] Start" << std::endl;
 		Symbol returned_type = getExpressionType(m->getExpr(), tbl);
+		std::cout << "[Debug] Done" << std::endl;
+		std::cout << "NULL: " << (returned_type == NULL) << std::endl;
 		tbl.exitscope();
 		// Check failed.
-		if (returned_type != no_expr && returned_type != m->getType()){
+		if (returned_type != No_type && returned_type != m->getType()){
 			
 			semant_error(c->get_filename(), m)
 				<< "Method " << c->getName() << "." << m->getName()
@@ -481,7 +485,7 @@ void ClassTable::checkMethodsType(Class_ c){
 				<< "got return type: " << returned_type << "."
 			;
 		}
-	}*/
+	}
 }
 void ClassTable::checkEachClassType(){
 	checked_ = initCheckMap(inher_map_);
@@ -497,6 +501,14 @@ void ClassTable::checkEachClassType(){
 }
 
 Symbol ClassTable::getExpressionType( Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
+    std::cout << "Called once" << std::endl;
+    expr_in->dump(std::cout,0);
+
+    // if expression type is no_expr, return NULL(no_expr)
+    if (expr_in-> get_type() == NULL){
+        return NULL;
+    }
+
 	// if expression type is already inferred, return immediately
 	if (expr_in->get_type() != No_type){
 		return expr_in->get_type();
@@ -504,13 +516,13 @@ Symbol ClassTable::getExpressionType( Expression expr_in, SymbolTable<Symbol, Sy
 
     // check expression type and infer type
     if (typeid(*expr_in) == typeid(assign_class)){
-		assign_class * expr_tmp = (assign_class *) expr_tmp;
+		assign_class * expr_tmp = (assign_class *) expr_in;
 		// get the type from the sub-expression
 		Symbol type_tmp = getExpressionType(expr_tmp->get_expr(),scope_table);
 		expr_tmp->set_type(type_tmp);
     }
     else if (typeid(*expr_in) == typeid(new__class)){
-		new__class * expr_tmp = (new__class *) expr_tmp;
+		new__class * expr_tmp = (new__class *) expr_in;
 		// get the type (new does not support recursive)
 		Symbol type_tmp = expr_tmp->get_type_name();
 		expr_tmp->set_type(type_tmp);
