@@ -509,25 +509,32 @@ Symbol ClassTable::getExpressionType( Expression expr_in, SymbolTable<Symbol, Sy
     // deal with all consts
     // infer type for int_const
     if (typeid(*expr_in) == typeid(int_const_class)){
-        int_const_class * expr_tmp = (int_const_class *) expr_in;
-        expr_tmp->set_type(Int);
+        expr_in->set_type(Int);
+        return expr_in->get_type();
     }
+    else if (typeid(*expr_in) == typeid(object_class)){
+        expr_in->set_type(Object);
+        return expr_in->get_type();
+    }
+    else if (typeid(*expr_in) == typeid(bool_const_class)){
+        expr_in->set_type(Bool);
+        return expr_in->get_type();
+    }
+
 
     // TODO (Deal with the rest of const)
 
     std::cout << "Called once" << std::endl;
 
-	// if expression type is already inferred, return immediately
-	if (expr_in->get_type() != No_type){
-		return expr_in->get_type();
-	}
 
     // check expression type and infer type
+    // TODO (maybe check with type name)
     if (typeid(*expr_in) == typeid(assign_class)){
 		assign_class * expr_tmp = (assign_class *) expr_in;
 		// get the type from the sub-expression
 		Symbol type_tmp = getExpressionType(expr_tmp->get_expr(),scope_table);
 		expr_tmp->set_type(type_tmp);
+		return expr_tmp->get_type();
     }
     else if (typeid(*expr_in) == typeid(new__class)){
 		new__class * expr_tmp = (new__class *) expr_in;

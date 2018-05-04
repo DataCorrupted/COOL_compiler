@@ -2,6 +2,6 @@ class Main{
 	mid : Int;
 
 	main(): Int {
-		1
+		mid <- 19
 	};
 };
