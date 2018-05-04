@@ -469,16 +469,16 @@ void ClassTable::checkMethodsType(Class_ c){
 	  ++iter){
 	  	Method m = iter->second;
 
+	  	// TODO (method.abort) shouldn't call expression type check if expr is NULL
 	  	// Each expression will be assigned a type inside getExpressionType().
 	  	tbl.enterscope();
 		Symbol returned_type = getExpressionType(m->getExpr(), tbl);
 		tbl.exitscope();
-		// Check failed.
-		if (returned_type == No_type || returned_type == m->getType()){
-			
+
+		if ( ( returned_type != NULL ) && ( returned_type != m->getType() ) ){
 			semant_error(c->get_filename(), m)
 				<< "Method " << c->getName() << "." << m->getName()
-				<< "expected return type: " << m->getType() << ", "
+				<< "() expected return type: " << m->getType() << ", "
 				<< "got return type: " << returned_type << "."
 			;
 		}
@@ -497,16 +497,49 @@ void ClassTable::checkEachClassType(){
 	}
 }
 
+/*bool ClassTable::checkExpressionType(Expression expr_in, Symbol type_infer, SymbolTable<Symbol, Symbol>& scope_table) {
+	Symbol type_defined = expr_in->get_type();
+
+	if (type_defined == NULL)
+
+	if (type_known == type_expected) {
+        return true;
+    }
+
+    std::cout << "" << std::endl;
+    return false;
+}*/
+
 Symbol ClassTable::getExpressionType( Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
+    // If the input expression is NULL (expression does not exist)
+    if (expr_in == NULL){
+        return NULL;
+    }
+
     // TODO (jianxiong) early return
+    if (expr_in->get_type() != NULL){
+        return expr_in->get_type();
+    }
+
+    /*expr_in->dump(std::cout,0);
+    if (expr_in == NULL){
+        std::cout << "The expression is NULL" << std::endl;
+    }
+    else if (expr_in->get_type() == NULL){
+        std::cout << "The type is NULL" << std::endl;
+    }
+    else{
+        std::cout << "The type is not NULL" << std::endl;
+    }*/
 
     // if expression type is no_expr, return NULL(no_expr)
     if (typeid(*expr_in) == typeid(no_expr_class)){
         expr_in->set_type(No_type);
-        return NULL;
+        return No_type;
     }
 
     // deal with all consts
+	// only infer type, no type checking is performed here
     // infer type for int_const
     if (typeid(*expr_in) == typeid(int_const_class)){
         expr_in->set_type(Int);
@@ -520,22 +553,48 @@ Symbol ClassTable::getExpressionType( Expression expr_in, SymbolTable<Symbol, Sy
         expr_in->set_type(Bool);
         return expr_in->get_type();
     }
+    else if (typeid(*expr_in) == typeid(string_const_class)){
+        expr_in->set_type(Str);
+        return expr_in->get_type();
+    }
 
-
-    // TODO (Deal with the rest of const)
-
-    std::cout << "Called once" << std::endl;
-
-
-    // check expression type and infer type
-    // TODO (maybe check with type name)
-    if (typeid(*expr_in) == typeid(assign_class)){
+	// check expression type and infer type
+	// assign class
+	if (typeid(*expr_in) == typeid(assign_class)){
 		assign_class * expr_tmp = (assign_class *) expr_in;
 		// get the type from the sub-expression
 		Symbol type_tmp = getExpressionType(expr_tmp->get_expr(),scope_table);
+		if (type_tmp == NULL)       return NULL;
+
+		Symbol type_defined = *scope_table.lookup(expr_tmp->get_name());
+		if (type_tmp != type_defined){
+			// TODO semantic error need class
+			// e.g. ./test/unit/scope_good.cl:11: Type Bool of assigned expression does not conform to declared type Int of identifier x.
+			return NULL;
+		}
+
 		expr_tmp->set_type(type_tmp);
 		return expr_tmp->get_type();
+	}
+
+	// -----------------------------------------------------------------------------
+    // TODO: The following haven't been completed yet
+
+    // block
+    if (typeid(*expr_in) == typeid(block_class)){
+    	block_class * expr_block = (block_class *) expr_block;
+    	Expressions exprs = expr_block->get_body();
+        // get the Symbol of last body as the Symbol for this block
+		// perform type checking along the way
+		Symbol last_symbol;
+		for (int i = 0; i < exprs->len(); i++){
+			Expression expr_tmp = exprs->nth(i);
+			last_symbol = getExpressionType(expr_tmp, scope_table);
+
+		}
     }
+
+
     else if (typeid(*expr_in) == typeid(new__class)){
 		new__class * expr_tmp = (new__class *) expr_in;
 		// get the type (new does not support recursive)

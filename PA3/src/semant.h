@@ -43,9 +43,12 @@ public:
     void checkMethodsType(Class_);
   void checkMethodInheritance();
 
-  // return no_expr
+  // return NULL on type_check failure / NULL is passed as expr_in
   Symbol getExpressionType( Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
-    void collectMethods(Class_);
+  // check if the type of one expression match with its definition
+  bool checkExpressionType(Expression expr_in, Symbol expected_type);
+
+  void collectMethods(Class_);
 
   int errors() { return semant_errors; }
   ostream& semant_error();

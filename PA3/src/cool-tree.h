@@ -300,6 +300,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+   Symbol get_name(){return name;}
    Expression get_expr(){return expr;}
 
 #ifdef Expression_SHARED_EXTRAS
@@ -439,6 +441,10 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+   Expressions get_body(){
+       return body;
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS

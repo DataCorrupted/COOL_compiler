@@ -2,3 +2,7 @@ semant
 cmake-build-debug
 .idea/
 CMakeLists.txt
+my_out
+my_int
+ref_out
+ref_int
