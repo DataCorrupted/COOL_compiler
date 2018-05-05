@@ -48,8 +48,8 @@ public:
   Symbol getExpressionType(Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
 
   // type checking: expr_in <= type_infer
-  bool checkExpressionType(const Expression expr_in,
-                           const Symbol type_infer,
+  bool checkExpressionType(const Symbol type_defined_in,
+                           const Symbol type_infer_in,
                            const SymbolTable<Symbol, Symbol>& scope_table,
                            const Symbol class_name);
 

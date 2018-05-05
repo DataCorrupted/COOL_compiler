@@ -479,7 +479,7 @@ void ClassTable::checkMethodsType(Class_ c){
 			semant_error(c->get_filename(), m)
 				<< "Method " << c->getName() << "." << getMethodSignature(m)
 				<< " expected return type: " << m->getType() << ", "
-				<< "got return type: " << returned_type << "."
+				<< "got return type: " << returned_type << "." << std::endl;
 			;
 		}
 	}
@@ -503,32 +503,29 @@ void ClassTable::checkEachClassType(){
 }
 
 /*
- * If type_infer <= expr_in.type, return true
+ * If type_infer <= type_defined, return true
  * otherwise, return false
  */
-bool ClassTable::checkExpressionType(const Expression expr_in,
-                                     const Symbol type_infer_in,
+bool ClassTable::checkExpressionType(const Symbol type_defined_in,
+									 const Symbol type_infer_in,
                                      const SymbolTable<Symbol, Symbol>& scope_table,
-									 const Class_ c) {
+									 const Symbol class_name) {
+	Symbol type_defined = type_defined_in;
     Symbol type_infer = type_infer_in;
-	Symbol type_defined = expr_in->get_type();
 
     // if both are SELF_TYPE
 	if (type_defined == SELF_TYPE){
-		if (type_infer != SELF_TYPE){
-			// TODO Print type error
-		}
 		return type_infer == SELF_TYPE;
 	}
 
     // if one is SELF_TYPE
 	if (type_infer == SELF_TYPE){
-        type_infer = c->getName();
+        type_infer = class_name;
     }
 
-	// TODO: call le for type checking
+	// call le for type checking
 	// type_infer <= type_defined
-    return false;
+    return le(type_infer, type_defined);
 }
 
 Symbol ClassTable::getExpressionType(
@@ -571,26 +568,46 @@ Symbol ClassTable::getExpressionType(
         return expr_in->get_type();
     }
 
+    // new_class
+    if (typeid(*expr_in) == typeid(new__class)){
+        new__class * expr_tmp = (new__class *) expr_in;
+        Symbol type_name = expr_tmp->get_type_name();
+        expr_tmp->set_type(type_name);
+    }
+
 	// check expression type and infer type
 	// assign class
 	if (typeid(*expr_in) == typeid(assign_class)){
 		assign_class * expr_tmp = (assign_class *) expr_in;
 		// get the type from the sub-expression
-		Symbol type_tmp = getExpressionType(c, expr_tmp->get_expr(),scope_table);
-		if (type_tmp == NULL)       return NULL;
+		Symbol type_infer = getExpressionType(c, expr_tmp->get_expr(),scope_table);
+		if (type_infer == NULL)       return NULL;
 
-		Symbol type_defined = *scope_table.lookup(expr_tmp->get_name());
-		// TODO: deal with the type checking
+		// type checking
+		if (!checkExpressionType(expr_tmp->get_name(),type_infer,scope_table,c->getName())){
+		    // TODO
+			semant_error(c) << "Type is invalid" << std::endl;
+			return NULL;
+		}
 
-		expr_tmp->set_type(type_tmp);
+		expr_tmp->set_type(type_infer);
 		return expr_tmp->get_type();
 	}
 
-	// new_class
-    if (typeid(*expr_in) == typeid(new__class)){
-        new__class * expr_tmp = (new__class *) expr_in;
-		Symbol type_name = expr_tmp->get_type_name();
-		expr_tmp->set_type(type_name);
+	// condition
+	if (typeid(*expr_in) == typeid(cond_class)){
+		cond_class * expr_cond = (cond_class *) expr_in;
+		if (getExpressionType(c,expr_cond->get_pred(),scope_table) != Bool){
+			// TODO
+			semant_error(c) << "Cond::pred is invalid" << std::endl;
+			return NULL;
+		}
+
+		Symbol type_then = getExpressionType(c,expr_cond->get_then_exp(),scope_table);
+		Symbol type_else = getExpressionType(c,expr_cond->get_else_exp(), scope_table);
+		Symbol type_lup = getSharedParent(type_then,type_else);
+		expr_cond->set_type(type_lup);
+		return expr_cond->get_type();
     }
 
 	// -----------------------------------------------------------------------------

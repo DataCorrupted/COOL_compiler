@@ -378,6 +378,10 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+   Expression get_pred(){return pred;}
+   Expression get_then_exp(){return then_exp;}
+   Expression get_else_exp(){return else_exp;}
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
