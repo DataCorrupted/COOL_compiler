@@ -581,40 +581,44 @@ Symbol ClassTable::getExpressionType(
 
     // new_class
     if (typeid(*expr_in) == typeid(new__class)){
-        new__class * expr_tmp = (new__class *) expr_in;
-        Symbol type_name = expr_tmp->get_type_name();
-        expr_tmp->set_type(type_name);
+        new__class * expr_new = (new__class *) expr_in;
+        Symbol type_name = expr_new->get_type_name();
+        // TODO: check id type_name defined or not
+        expr_new->set_type(type_name);
+        return expr_new->get_type();
     }
 	// isvoid
 	if (typeid(*expr_in) == typeid(isvoid_class)){
     	isvoid_class * expr_isvoid = (isvoid_class *) expr_in;
     	if (getExpressionType(c,expr_isvoid->get_expr(),scope_table) == NULL){
     		// TODO
-    		semant_error(c) << "ISVOID TYPE failed" << std::endl;
+    		semant_error(c) << "ISVOID Expr failed" << std::endl;
     		return NULL;
     	}
     	expr_in->set_type(Bool);
+    	return expr_isvoid->get_type();
     }
-
 
 
 	// check expression type and infer type
 	// assign class
 	if (typeid(*expr_in) == typeid(assign_class)){
-		assign_class * expr_tmp = (assign_class *) expr_in;
+		assign_class * expr_assign = (assign_class *) expr_in;
 		// get the type from the sub-expression
-		Symbol type_infer = getExpressionType(c, expr_tmp->get_expr(),scope_table);
+		Symbol type_infer = getExpressionType(c, expr_assign->get_expr(),scope_table);
 		if (type_infer == NULL)       return NULL;
 
 		// type checking
-		if (!checkExpressionType(expr_tmp->get_name(),type_infer,scope_table,c->getName())){
-		    // TODO
-			semant_error(c) << "Type is invalid" << std::endl;
-			return NULL;
+        // std::cout << "type_inferred: " << type_infer << std::endl;
+        Symbol type_defined = *scope_table.lookup(expr_assign->get_name());
+		// std::cout << "type_defined: " << type_defined  << std::endl;
+		if (!checkExpressionType(type_defined,type_infer,scope_table,c->getName())){
+			semant_type_error(c,expr_in,type_infer,type_defined,expr_assign->get_name());
+			return type_infer;
 		}
 
-		expr_tmp->set_type(type_infer);
-		return expr_tmp->get_type();
+        expr_assign->set_type(type_infer);
+		return expr_assign->get_type();
 	}
 
 	// condition
@@ -745,18 +749,6 @@ Symbol ClassTable::getExpressionType(
 	}
 
 
-	// -----------------------------------------------------------------------------
-    // TODO: The following haven't been completed yet
-
-
-    else if (typeid(*expr_in) == typeid(new__class)){
-		new__class * expr_tmp = (new__class *) expr_in;
-		// get the type (new does not support recursive)
-		Symbol type_tmp = expr_tmp->get_type_name();
-		expr_tmp->set_type(type_tmp);
-	}
-
-
 	// raise error if still no match
     throw 6;
 
@@ -793,6 +785,14 @@ std::deque<Symbol> ClassTable::getInherVec(Symbol curr){
 		inher_vec.push_front(curr);
 	}
 	return inher_vec;
+}
+
+// a helper function for type checking semant error
+ostream& ClassTable::semant_type_error(Class_  c, tree_node *expr_in , Symbol type_infer, Symbol type_defined,
+									   Symbol id_name) {
+	semant_error(c->get_filename(),expr_in) << "Type " << type_infer
+											<< " of assigned expression does not conform to declared type "
+			  << type_defined <<" of identifier "<<id_name<<"." << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////

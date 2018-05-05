@@ -64,6 +64,9 @@ public:
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
 
+  // type_error
+  ostream& semant_type_error(Class_  c, tree_node *expr_in, Symbol type_infer, Symbol type_defined, Symbol id_name);
+
   template <class K, class V>
   std::map<K, bool> initCheckMap(std::map<K, V>&);
 
