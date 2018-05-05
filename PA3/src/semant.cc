@@ -469,7 +469,8 @@ void ClassTable::checkMethodsType(Class_ c){
 	  ++iter){
 		Method m = iter->second;
 
-		std::map<Symbol, Symbol>& parent_method = method_map_[inher_map_[c->getParent()]];
+		std::map<Symbol, Method>& parent_method 
+			= method_map_[inher_map_[c->getParent()]->getName()];
 		// That this method is inherited from the parent,
 		// furthermore, they are the same.
 		// Then we skip this method as it has been checked previously.
