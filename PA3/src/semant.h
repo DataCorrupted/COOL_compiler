@@ -9,6 +9,7 @@
 #include "list.h"
 
 #include <map>
+#include <deque>
 
 #define TRUE 1
 #define FALSE 0
@@ -49,6 +50,10 @@ public:
   bool checkExpressionType(Expression expr_in, Symbol expected_type);
 
   void collectMethods(Class_);
+
+  bool le(Symbol, Symbol);
+  Symbol getSharedParent(Symbol, Symbol);
+  std::deque<Symbol> getInherVec(Symbol);
 
   int errors() { return semant_errors; }
   ostream& semant_error();

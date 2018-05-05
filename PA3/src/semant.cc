@@ -10,8 +10,8 @@
 #include <iostream>
 
 #include <string>
-#include <vector>
 #include <typeinfo>
+#include <vector>
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -607,6 +607,39 @@ Symbol ClassTable::getExpressionType(
 	// raise error if still no match
     throw 6;
 
+}
+
+
+bool ClassTable::le(Symbol a, Symbol b){
+	// Everyone is le Object.
+	if (b == Object) { return true; }
+	// Find a's parent until it gets to b.
+	// Or a ends up in Object.
+	while (a != b && a != Object){
+		a = inher_map_[a]->getParent();
+	}
+	return a == b;
+}
+
+Symbol ClassTable::getSharedParent(Symbol a, Symbol b){
+	std::deque<Symbol> a_path = getInherVec(a);
+	std::deque<Symbol> b_path = getInherVec(b);
+
+	unsigned int i = 0;
+	while (i+1 < a_path.size()-1 && i+1 < b_path.size()-1 && a_path[i+1] == b_path[i+1]){
+		i++;
+	}
+	return a_path[i];
+}
+
+std::deque<Symbol> ClassTable::getInherVec(Symbol curr){
+	std::deque<Symbol> inher_vec;
+	inher_vec.push_front(curr);
+	while (curr != Object){
+		curr = inher_map_[curr]->getParent();
+		inher_vec.push_front(curr);
+	}
+	return inher_vec;
 }
 
 ////////////////////////////////////////////////////////////////////
