@@ -1,5 +1,4 @@
 *.pdf
-*/tools-bin/*
 *O*
 !*README.md
 *tmp*
