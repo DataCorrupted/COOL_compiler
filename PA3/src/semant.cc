@@ -448,7 +448,7 @@ void ClassTable::checkFeatureInheritance(){
 void ClassTable::checkMethodsType(Class_ c){
 	// It's not necessary anymore whether father or son goes first.
 	// But we still did it anyway.
-	if (c->getName() != Object && !checked_[c->getName()]){
+	if (c->getName() != Object && !checked_[c->getParent()]){
 		checkMethodsType(inher_map_[c->getParent()]);
 	}
 
@@ -468,7 +468,6 @@ void ClassTable::checkMethodsType(Class_ c){
 	  iter != method_map_[class_name].end();
 	  ++iter){
 		Method m = iter->second;
-
 		std::map<Symbol, Method>& parent_method 
 			= method_map_[inher_map_[c->getParent()]->getName()];
 		// That this method is inherited from the parent,
@@ -482,7 +481,9 @@ void ClassTable::checkMethodsType(Class_ c){
 		// TODO (method.abort) shouldn't call expression type check if expr is NULL
 		// Each expression will be assigned a type inside getExpressionType().
 		tbl.enterscope();
+		//std::cerr << c->getName() << "." << getMethodSignature(m) << std::endl;
 		Symbol returned_type = getExpressionType(c, m->getExpr(), tbl);
+		//std::cerr << c->getName() << "." << getMethodSignature(m) << std::endl;
 		tbl.exitscope();
 
 		if ( ( returned_type != NULL ) && le(returned_type, m->getType()) ){
@@ -731,8 +732,7 @@ ostream& ClassTable::semant_error()
      errors. Part 2) can be done in a second stage, when you want
      to build mycoolc.
  */
-void program_class::semant()
-{
+void program_class::semant() {
     initialize_constants();
 
     /* ClassTable constructor may do some semantic analysis */
