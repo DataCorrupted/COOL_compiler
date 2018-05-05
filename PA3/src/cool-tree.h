@@ -747,6 +747,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
    Symbol get_type_name(){return type_name;}
 
 #ifdef Expression_SHARED_EXTRAS

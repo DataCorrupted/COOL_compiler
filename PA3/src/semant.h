@@ -45,8 +45,12 @@ public:
 
   // return NULL on type_check failure / NULL is passed as expr_in
   Symbol getExpressionType( Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
-  // check if the type of one expression match with its definition
-  bool checkExpressionType(Expression expr_in, Symbol expected_type);
+
+  // type checking: expr_in <= type_infer
+  bool checkExpressionType(const Expression expr_in,
+                           const Symbol type_infer,
+                           const SymbolTable<Symbol, Symbol>& scope_table,
+                           const Symbol class_name);
 
   void collectMethods(Class_);
 

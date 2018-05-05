@@ -19,6 +19,10 @@ class Main{
 	};
 };
 
-class Bar{
+class Bar inherits Main{
+    y : Main;
 
+    yoo() : Main {
+        y <- new SELF_TYPE
+    };
 };
