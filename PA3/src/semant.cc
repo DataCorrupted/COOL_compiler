@@ -449,7 +449,7 @@ void ClassTable::checkMethodsType(Class_ c){
 	// It's not necessary anymore whether father or son goes first.
 	// But we still did it anyway.
 	if (c->getName() != Object && !checked_[c->getName()]){
-		checkMethodsType(inher_map_.find(c->getParent())->second);
+		checkMethodsType(inher_map_[c->getParent()]);
 	}
 
 	Symbol class_name = c->getName();
@@ -467,11 +467,20 @@ void ClassTable::checkMethodsType(Class_ c){
 	for (std::map<Symbol, Method>::iterator iter = method_map_[class_name].begin();
 	  iter != method_map_[class_name].end();
 	  ++iter){
-	  	Method m = iter->second;
+		Method m = iter->second;
 
-	  	// TODO (method.abort) shouldn't call expression type check if expr is NULL
-	  	// Each expression will be assigned a type inside getExpressionType().
-	  	tbl.enterscope();
+		std::map<Symbol, Symbol>& parent_method = method_map_[inher_map_[c->getParent()]];
+		// That this method is inherited from the parent,
+		// furthermore, they are the same.
+		// Then we skip this method as it has been checked previously.
+		if (parent_method.find(iter->first) != parent_method.end() 
+		  && parent_method.find(iter->first)->second == m) {
+			continue;
+		}
+
+		// TODO (method.abort) shouldn't call expression type check if expr is NULL
+		// Each expression will be assigned a type inside getExpressionType().
+		tbl.enterscope();
 		Symbol returned_type = getExpressionType(c, m->getExpr(), tbl);
 		tbl.exitscope();
 
