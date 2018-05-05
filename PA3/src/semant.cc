@@ -472,13 +472,13 @@ void ClassTable::checkMethodsType(Class_ c){
 	  	// TODO (method.abort) shouldn't call expression type check if expr is NULL
 	  	// Each expression will be assigned a type inside getExpressionType().
 	  	tbl.enterscope();
-		Symbol returned_type = getExpressionType(m->getExpr(), tbl);
+		Symbol returned_type = getExpressionType(c, m->getExpr(), tbl);
 		tbl.exitscope();
 
 		if ( ( returned_type != NULL ) && ( returned_type != m->getType() ) ){
 			semant_error(c->get_filename(), m)
-				<< "Method " << c->getName() << "." << m->getName()
-				<< "() expected return type: " << m->getType() << ", "
+				<< "Method " << c->getName() << "." << getMethodSignature(m)
+				<< " expected return type: " << m->getType() << ", "
 				<< "got return type: " << returned_type << "."
 			;
 		}
@@ -516,7 +516,8 @@ bool ClassTable::checkExpressionType(const Expression expr_in,
     return false;
 }
 
-Symbol ClassTable::getExpressionType( Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
+Symbol ClassTable::getExpressionType(
+  Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
     // If the input expression is NULL (expression does not exist)
     if (expr_in == NULL){
         return NULL;
@@ -569,7 +570,7 @@ Symbol ClassTable::getExpressionType( Expression expr_in, SymbolTable<Symbol, Sy
 	if (typeid(*expr_in) == typeid(assign_class)){
 		assign_class * expr_tmp = (assign_class *) expr_in;
 		// get the type from the sub-expression
-		Symbol type_tmp = getExpressionType(expr_tmp->get_expr(),scope_table);
+		Symbol type_tmp = getExpressionType(c, expr_tmp->get_expr(),scope_table);
 		if (type_tmp == NULL)       return NULL;
 
 		Symbol type_defined = *scope_table.lookup(expr_tmp->get_name());
@@ -605,7 +606,7 @@ Symbol ClassTable::getExpressionType( Expression expr_in, SymbolTable<Symbol, Sy
 		Symbol last_symbol;
 		for (int i = 0; i < exprs->len(); i++){
 			Expression expr_tmp = exprs->nth(i);
-			last_symbol = getExpressionType(expr_tmp, scope_table);
+			last_symbol = getExpressionType(c, expr_tmp, scope_table);
 
 		}
     }

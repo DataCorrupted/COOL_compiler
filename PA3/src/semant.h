@@ -44,7 +44,7 @@ public:
   void checkMethodInheritance();
 
   // return NULL on type_check failure / NULL is passed as expr_in
-  Symbol getExpressionType( Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
+  Symbol getExpressionType(Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
 
   // type checking: expr_in <= type_infer
   bool checkExpressionType(const Expression expr_in,
