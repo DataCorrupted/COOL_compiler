@@ -498,21 +498,31 @@ void ClassTable::checkEachClassType(){
 }
 
 /*
- * If expr_in.type <=  type_infer, return true
+ * If type_infer <= expr_in.type, return true
  * otherwise, return false
  */
 bool ClassTable::checkExpressionType(const Expression expr_in,
                                      const Symbol type_infer_in,
                                      const SymbolTable<Symbol, Symbol>& scope_table,
-									 const Symbol class_name) {
+									 const Class_ c) {
     Symbol type_infer = type_infer_in;
-	if (type_infer == SELF_TYPE){
-        type_infer = class_name;
-    }
-
 	Symbol type_defined = expr_in->get_type();
 
+    // if both are SELF_TYPE
+	if (type_defined == SELF_TYPE){
+		if (type_infer != SELF_TYPE){
+			// TODO Print type error
+		}
+		return type_infer == SELF_TYPE;
+	}
+
+    // if one is SELF_TYPE
+	if (type_infer == SELF_TYPE){
+        type_infer = c->getName();
+    }
+
 	// TODO: call le for type checking
+	// type_infer <= type_defined
     return false;
 }
 
@@ -523,21 +533,12 @@ Symbol ClassTable::getExpressionType(
         return NULL;
     }
 
-    // TODO (jianxiong) early return
+    // early return
     if (expr_in->get_type() != NULL){
         return expr_in->get_type();
     }
 
-    /*expr_in->dump(std::cout,0);
-    if (expr_in == NULL){
-        std::cout << "The expression is NULL" << std::endl;
-    }
-    else if (expr_in->get_type() == NULL){
-        std::cout << "The type is NULL" << std::endl;
-    }
-    else{
-        std::cout << "The type is not NULL" << std::endl;
-    }*/
+    // infer type and perform type checking when (expr_in->get_type != NULL)
 
     // if expression type is no_expr, return NULL(no_expr)
     if (typeid(*expr_in) == typeid(no_expr_class)){
@@ -575,11 +576,6 @@ Symbol ClassTable::getExpressionType(
 
 		Symbol type_defined = *scope_table.lookup(expr_tmp->get_name());
 		// TODO: deal with the type checking
-		if (type_tmp != type_defined){
-			// TODO semantic error need class
-			// e.g. ./test/unit/scope_good.cl:11: Type Bool of assigned expression does not conform to declared type Int of identifier x.
-			return NULL;
-		}
 
 		expr_tmp->set_type(type_tmp);
 		return expr_tmp->get_type();
@@ -589,9 +585,7 @@ Symbol ClassTable::getExpressionType(
     if (typeid(*expr_in) == typeid(new__class)){
         new__class * expr_tmp = (new__class *) expr_in;
 		Symbol type_name = expr_tmp->get_type_name();
-		if (type_name == SELF_TYPE){
-			//TODO: replace the SELF_TYPE with the class type
-		}
+		expr_tmp->set_type(type_name);
     }
 
 	// -----------------------------------------------------------------------------

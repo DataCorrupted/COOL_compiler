@@ -31,4 +31,10 @@ class Bar inherits Main{
         y_2 <- new SELF_TYPE
     };
 
+    yoo_3() : SELF_TYPE{
+        {
+            y_2 <- new Bar;
+            new SELF_TYPE;
+        }
+    };
 };
