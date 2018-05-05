@@ -678,6 +678,70 @@ Symbol ClassTable::getExpressionType(
         expr_block->set_type(last_symbol);
         return expr_block->get_type();
     }
+    // not
+    if (typeid(*expr_in) == typeid(comp_class)){
+    	comp_class * expr_comp = (comp_class *) expr_in;
+    	if (getExpressionType(c,expr_comp->get_expr(),scope_table) != Bool){
+			// TODO
+			semant_error(c) << "comp:expr is invalid" << std::endl;
+			return NULL;
+    	}
+    	expr_comp->set_type(Bool);
+    	return expr_comp->get_type();
+    }
+	// neg
+	if (typeid(*expr_in) == typeid(neg_class)){
+		neg_class * expr_neg = (neg_class *) expr_in;
+		if (getExpressionType(c,expr_neg->get_expr(),scope_table) != Int){
+			// TODO
+			semant_error(c) << "neg:expr is invalid" << std::endl;
+			return NULL;
+		}
+		expr_neg->set_type(Bool);
+		return expr_neg->get_type();
+	}
+    // less than
+	if (typeid(*expr_in) == typeid(lt_class)){
+    	lt_class * expr_lt = (lt_class *) expr_in;
+
+    	Symbol type_1 = getExpressionType(c,expr_lt->get_e1(),scope_table);
+    	if (type_1 != Int){
+			// TODO
+			semant_error(c) << "comp<lt>:expr is invalid" << std::endl;
+			return NULL;
+    	}
+
+		Symbol type_2 = getExpressionType(c,expr_lt->get_e2(),scope_table);
+		if (type_2 != Int){
+			// TODO
+			semant_error(c) << "comp<lt>:expr is invalid" << std::endl;
+			return NULL;
+		}
+
+		expr_lt->set_type(Bool);
+		return expr_lt->get_type();
+    }
+	// less than equal
+	if (typeid(*expr_in) == typeid(leq_class)){
+		leq_class * expr_leq = (leq_class *) expr_in;
+
+		Symbol type_1 = getExpressionType(c,expr_leq->get_e1(),scope_table);
+		if (type_1 != Int){
+			// TODO
+			semant_error(c) << "comp<leq>:expr is invalid" << std::endl;
+			return NULL;
+		}
+
+		Symbol type_2 = getExpressionType(c,expr_leq->get_e2(),scope_table);
+		if (type_2 != Int){
+			// TODO
+			semant_error(c) << "comp<leq>:expr is invalid" << std::endl;
+			return NULL;
+		}
+
+		expr_leq->set_type(Bool);
+		return expr_leq->get_type();
+	}
 
 
 	// -----------------------------------------------------------------------------
