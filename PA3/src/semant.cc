@@ -486,6 +486,11 @@ void ClassTable::checkMethodsType(Class_ c){
 }
 void ClassTable::checkEachClassType(){
 	checked_ = initCheckMap(inher_map_);
+
+	// Deliberately skip the following 5 classes.
+	checked_[Object] = true;
+	checked_[Int] = true;		checked_[IO] = true;
+	checked_[Bool] = true;		checked_[Str] = true;
 	for (std::map<Symbol, Class_>::iterator iter = inher_map_.begin();
 	  iter != inher_map_.end();
 	  ++iter){
