@@ -497,18 +497,24 @@ void ClassTable::checkEachClassType(){
 	}
 }
 
-/*bool ClassTable::checkExpressionType(Expression expr_in, Symbol type_infer, SymbolTable<Symbol, Symbol>& scope_table) {
-	Symbol type_defined = expr_in->get_type();
-
-	if (type_defined == NULL)
-
-	if (type_known == type_expected) {
-        return true;
+/*
+ * If expr_in.type <=  type_infer, return true
+ * otherwise, return false
+ */
+bool ClassTable::checkExpressionType(const Expression expr_in,
+                                     const Symbol type_infer_in,
+                                     const SymbolTable<Symbol, Symbol>& scope_table,
+									 const Symbol class_name) {
+    Symbol type_infer = type_infer_in;
+	if (type_infer == SELF_TYPE){
+        type_infer = class_name;
     }
 
-    std::cout << "" << std::endl;
+	Symbol type_defined = expr_in->get_type();
+
+	// TODO: call le for type checking
     return false;
-}*/
+}
 
 Symbol ClassTable::getExpressionType(
   Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
@@ -568,6 +574,7 @@ Symbol ClassTable::getExpressionType(
 		if (type_tmp == NULL)       return NULL;
 
 		Symbol type_defined = *scope_table.lookup(expr_tmp->get_name());
+		// TODO: deal with the type checking
 		if (type_tmp != type_defined){
 			// TODO semantic error need class
 			// e.g. ./test/unit/scope_good.cl:11: Type Bool of assigned expression does not conform to declared type Int of identifier x.
@@ -577,6 +584,15 @@ Symbol ClassTable::getExpressionType(
 		expr_tmp->set_type(type_tmp);
 		return expr_tmp->get_type();
 	}
+
+	// new_class
+    if (typeid(*expr_in) == typeid(new__class)){
+        new__class * expr_tmp = (new__class *) expr_in;
+		Symbol type_name = expr_tmp->get_type_name();
+		if (type_name == SELF_TYPE){
+			//TODO: replace the SELF_TYPE with the class type
+		}
+    }
 
 	// -----------------------------------------------------------------------------
     // TODO: The following haven't been completed yet
