@@ -475,7 +475,7 @@ void ClassTable::checkMethodsType(Class_ c){
 		Symbol returned_type = getExpressionType(c, m->getExpr(), tbl);
 		tbl.exitscope();
 
-		if ( ( returned_type != NULL ) && ( returned_type != m->getType() ) ){
+		if ( ( returned_type != NULL ) && le(returned_type, m->getType()) ){
 			semant_error(c->get_filename(), m)
 				<< "Method " << c->getName() << "." << getMethodSignature(m)
 				<< " expected return type: " << m->getType() << ", "
