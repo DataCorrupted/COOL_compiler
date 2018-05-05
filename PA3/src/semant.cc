@@ -661,7 +661,7 @@ Symbol ClassTable::getExpressionType(
 
     // block
     if (typeid(*expr_in) == typeid(block_class)){
-        block_class * expr_block = (block_class *) expr_block;
+        block_class * expr_block = (block_class *) expr_in;
         Expressions expr_body = expr_block->get_body();
         // get the Symbol of last body as the Symbol for this block
         // perform type checking along the way
