@@ -309,6 +309,19 @@ void ClassTable::install_basic_classes() {
 	inher_map_.insert(std::pair<Symbol, Class_>(Str, Str_class));
 }
 
+void ClassTable::checkFeatureInheritance(){
+	checked_ = initCheckMap(inher_map_);
+	for (std::map<Symbol, Class_>::iterator iter = inher_map_.begin();
+	  iter != inher_map_.end();
+	  ++iter){
+		if (checked_[iter->first]){
+			continue;
+		} else {
+			collectFeatures(iter->second);
+		}
+	}
+}
+
 void ClassTable::collectFeatures(const Class_ c){
 
 	// We always check parent first if it's not checked. 
@@ -414,44 +427,24 @@ void ClassTable::collectFeatures(const Class_ c){
 	checked_[c->getName()] = true;
 }
 
-void ClassTable::checkFeatureInheritance(){
+void ClassTable::checkEachClassType(){
 	checked_ = initCheckMap(inher_map_);
+
+	// Deliberately skip the following 5 classes.
+	checked_[Object] = true;
+	checked_[Int] = true;		checked_[IO] = true;
+	checked_[Bool] = true;		checked_[Str] = true;
 	for (std::map<Symbol, Class_>::iterator iter = inher_map_.begin();
 	  iter != inher_map_.end();
 	  ++iter){
 		if (checked_[iter->first]){
 			continue;
 		} else {
-			collectFeatures(iter->second);
+			checkMethodsReturnType(iter->second);
 		}
 	}
 }
 
-const bool ClassTable::isMethodSignTypeValid(const Class_ c, const Method m){
-	bool is_sign_correct = true;
-	std::stringstream undefined_type;
-	// Method can be SELF_TYPE
-	if (m->getType() != SELF_TYPE && !hasKeyInMap(m->getType(), inher_map_)){
-		if (!is_sign_correct) {	undefined_type << ", ";	}
-		undefined_type << m->getType();
-		is_sign_correct = false;
-	}
-	Formals f = m->getFormals();
-	for (int i=0; i<f->len(); i++){
-		Symbol type_name = f->nth(i)->getType();
-		if (!hasKeyInMap(type_name, inher_map_)){
-			if (!is_sign_correct) {	undefined_type << ", ";	}
-			undefined_type << m->getType();
-			is_sign_correct = false;
-		}
-	}
-	if (!is_sign_correct){
-		semant_error(c->get_filename(), m)
-			<< "Method " << c->getName() << "." << m->getMethodSignature()
-			<< " got undefined type: " << undefined_type.str() << "\n";
-	}
-	return is_sign_correct;
-}
 void ClassTable::checkMethodsReturnType(const Class_ c){
 	Symbol class_name = c->getName();
 	
@@ -518,22 +511,31 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 	// Label this class as been checked.
 	checked_[class_name] = true;
 }
-void ClassTable::checkEachClassType(){
-	checked_ = initCheckMap(inher_map_);
 
-	// Deliberately skip the following 5 classes.
-	checked_[Object] = true;
-	checked_[Int] = true;		checked_[IO] = true;
-	checked_[Bool] = true;		checked_[Str] = true;
-	for (std::map<Symbol, Class_>::iterator iter = inher_map_.begin();
-	  iter != inher_map_.end();
-	  ++iter){
-		if (checked_[iter->first]){
-			continue;
-		} else {
-			checkMethodsReturnType(iter->second);
+const bool ClassTable::isMethodSignTypeValid(const Class_ c, const Method m){
+	bool is_sign_correct = true;
+	std::stringstream undefined_type;
+	// Method can be SELF_TYPE
+	if (m->getType() != SELF_TYPE && !hasKeyInMap(m->getType(), inher_map_)){
+		if (!is_sign_correct) {	undefined_type << ", ";	}
+		undefined_type << m->getType();
+		is_sign_correct = false;
+	}
+	Formals f = m->getFormals();
+	for (int i=0; i<f->len(); i++){
+		Symbol type_name = f->nth(i)->getType();
+		if (!hasKeyInMap(type_name, inher_map_)){
+			if (!is_sign_correct) {	undefined_type << ", ";	}
+			undefined_type << m->getType();
+			is_sign_correct = false;
 		}
 	}
+	if (!is_sign_correct){
+		semant_error(c->get_filename(), m)
+			<< "Method " << c->getName() << "." << m->getMethodSignature()
+			<< " got undefined type: " << undefined_type.str() << "\n";
+	}
+	return is_sign_correct;
 }
 
 /*
@@ -699,48 +701,21 @@ void ClassTable::getExpressionType(
 			semant_error(c) << "comp:expr is invalid" << std::endl;
 		}
 		expr_comp->set_type(Bool);
-	}
-	// less than
-	else if (typeid(*expr_in) == typeid(lt_class)){
-		lt_class * expr_lt = (lt_class *) expr_in;
 
-		getExpressionType(c,expr_lt->get_e1(),scope_table);
-		getExpressionType(c,expr_lt->get_e2(),scope_table);
+	// =
+	} else if (typeid(*expr_in) == typeid(eq_class)){
+		assignCompareType<eq_class*>(c, expr_in, scope_table);
 
+	// <
+	} else if (typeid(*expr_in) == typeid(lt_class)){
+		assignCompareType<lt_class*>(c, expr_in, scope_table);
 
-		if (expr_lt->get_e1()->get_type() != Int){
-			// TODO
-			semant_error(c) << "comp<lt>:expr is invalid" << std::endl;
-		}
+	// <=
+	} else if (typeid(*expr_in) == typeid(leq_class)){
+		assignCompareType<leq_class*>(c, expr_in, scope_table);
 
-		if (expr_lt->get_e2()->get_type() != Int){
-			// TODO
-			semant_error(c) << "comp<lt>:expr is invalid" << std::endl;
-		}
-
-		expr_lt->set_type(Bool);
-	}
-	// less than equal
-	else if (typeid(*expr_in) == typeid(leq_class)){
-		leq_class * expr_leq = (leq_class *) expr_in;
-
-		getExpressionType(c,expr_leq->get_e1(),scope_table);
-		getExpressionType(c,expr_leq->get_e2(),scope_table);
-
-		if (expr_leq->get_e1()->get_type() != Int){
-			// TODO
-			semant_error(c) << "comp<leq>:expr is invalid" << std::endl;
-		}
-
-		if (expr_leq->get_e2()->get_type() != Int){
-			// TODO
-			semant_error(c) << "comp<leq>:expr is invalid" << std::endl;
-		}
-
-		expr_leq->set_type(Bool);
-	}
 	// neg
-	else if (typeid(*expr_in) == typeid(neg_class)){
+	} else if (typeid(*expr_in) == typeid(neg_class)){
 		neg_class * expr_neg = (neg_class *) expr_in;
 
 		getExpressionType(c,expr_neg->get_expr(),scope_table);
@@ -751,14 +726,23 @@ void ClassTable::getExpressionType(
 													<<" instead of Int." << std::endl;
 		}
 		expr_neg->set_type(type_1);
-	} else if (true /*+*/) {
-		;
-	} else if (true /*-*/) {
-		;
-	} else if (true /***/) {
-		;
-	} else if (true /*/*/) {
-		;
+
+	// +
+	} else if (typeid(*expr_in) == typeid(plus_class)) {
+		assignArithmeticType<plus_class*>(c, expr_in, scope_table);
+
+	// -
+	} else if (typeid(*expr_in) == typeid(sub_class)) {
+		assignArithmeticType<sub_class*>(c, expr_in, scope_table);
+
+	// *
+	} else if (typeid(*expr_in) == typeid(mul_class)) {
+		assignArithmeticType<mul_class*>(c, expr_in, scope_table);
+
+	// /
+	} else if (typeid(*expr_in) == typeid(divide_class)) {
+		assignArithmeticType<divide_class*>(c, expr_in, scope_table);
+	  	
 	} else if (true /* static dispatch */) {
 		;
 	} else if (true /* dynamic dispathc */) {
@@ -773,6 +757,66 @@ void ClassTable::getExpressionType(
 	}
 }
 
+template <class Compare>
+void ClassTable::assignCompareType(
+  const Class_ c, Expression e, SymbolTable<Symbol, Symbol>& tbl){
+	Compare a = dynamic_cast<Compare>(e);
+	getExpressionType(c, a->getExprOne(), tbl);
+	getExpressionType(c, a->getExprTwo(), tbl);
+
+	Symbol type_1 = a->getExprOne()->get_type();
+	Symbol type_2 = a->getExprTwo()->get_type();
+
+	bool is_legal;
+	// For eq, they either have same static type, or don't have it at all
+	if (typeid(Compare) == typeid(eq_class*)){
+		is_legal =  
+		// Have same static type
+		  ((type_2 == type_1) && (type_1 == Int || type_1 == Bool || type_1 == Str)) ||
+		// Or can be freely compared, but non of them can be of Bool, Int or Str
+		  (type_1 != Int && type_1 != Bool && type_1 != Str && type_2 != Int && type_2 != Bool && type_2 != Str);
+
+	// For leq and le, they all need to be Int.
+	} else {
+		is_legal = ((type_1 == Int) && (type_2 == Int));
+	}
+
+	if (!is_legal) {
+		if (typeid(Compare) == typeid(eq_class*)){
+			semant_error(c->get_filename(), e)
+				<< "Illegal comparison with a basic type.\n";
+			;
+		} else {
+			semant_error(c->get_filename(), e)
+				<< "non-Int arguments: " 
+				<< type_1 << " " << a->getOperator() 
+				<< " " << type_2 << "\n";
+			;
+		}
+	}
+	e->set_type(Bool);
+}
+
+template <class Arithmetic>
+void ClassTable::assignArithmeticType(
+  const Class_ c, Expression e, SymbolTable<Symbol, Symbol>& tbl){
+	Arithmetic a = dynamic_cast<Arithmetic>(e);
+
+	getExpressionType(c, a->getExprOne(), tbl);
+	getExpressionType(c, a->getExprTwo(), tbl);
+
+	Symbol type_1 = a->getExprOne()->get_type();
+	Symbol type_2 = a->getExprTwo()->get_type();
+
+	if (type_1 != Int || type_2 != Int){
+		semant_error(c->get_filename(), e)
+			<< "non-Int arguments: " 
+			<< type_1 << " " << a->getOperator() 
+			<< " " << type_2 << "\n";
+		;
+	}
+	e->set_type(Int);
+}
 
 const bool ClassTable::le(Symbol a, const Symbol b) const {
 	// Everyone is le Object.

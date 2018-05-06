@@ -522,6 +522,10 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+   const Expression getExprOne() const { return e1; }
+   const Expression getExprTwo() const { return e2; }
+   const std::string getOperator() const { return "+";}
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -543,6 +547,10 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+   const Expression getExprOne() const { return e1; }
+   const Expression getExprTwo() const { return e2; }
+   const std::string getOperator() const { return "-";}
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -566,6 +574,10 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+   const Expression getExprOne() const { return e1; }
+   const Expression getExprTwo() const { return e2; }
+   const std::string getOperator() const { return "*";}
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -587,6 +599,10 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+   const Expression getExprOne() const { return e1; }
+   const Expression getExprTwo() const { return e2; }
+   const std::string getOperator() const { return "/";}
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -632,9 +648,9 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Expression get_e1(){return e1;}
-   Expression get_e2(){return e2;}
-
+   const Expression getExprOne() const { return e1; }
+   const Expression getExprTwo() const { return e2; }
+   const std::string getOperator() const { return "<"; }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -658,8 +674,9 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Expression get_e1(){return e1;}
-   Expression get_e2(){return e2;}
+   const Expression getExprOne() const { return e1; }
+   const Expression getExprTwo() const { return e2; }
+   const std::string getOperator() const { return "="; }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -683,8 +700,9 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Expression get_e1(){return e1;}
-   Expression get_e2(){return e2;}
+   const Expression getExprOne() const { return e1; }
+   const Expression getExprTwo() const { return e2; }
+   const std::string getOperator() const { return "<="; }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS

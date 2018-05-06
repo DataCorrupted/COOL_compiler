@@ -44,14 +44,19 @@ public:
     void checkMethodsReturnType(const Class_);
     const bool isMethodSignTypeValid(const Class_, const Method);
 
-  // return NULL on type_check failure / NULL is passed as expr_in
-  void getExpressionType(Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
-
   // type checking: expr_in <= type_infer
   bool checkExpressionType(const Symbol type_defined_in,
                            const Symbol type_infer_in,
                            const SymbolTable<Symbol, Symbol>& scope_table,
                            const Symbol class_name);
+
+  // return NULL on type_check failure / NULL is passed as expr_in
+  void getExpressionType(Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
+  
+  template <class Compare>
+  void assignCompareType(const Class_, Expression, SymbolTable<Symbol, Symbol>&);
+  template <class Arithmetic>
+  void assignArithmeticType(const Class_, Expression, SymbolTable<Symbol, Symbol>&);
 
   const bool le(Symbol, const Symbol) const;
   const Symbol getSharedParent(const Symbol, const Symbol) const;
@@ -65,6 +70,7 @@ public:
   // type_error
   void semant_type_error(Class_  c, tree_node *expr_in, Symbol type_infer, Symbol type_defined, Symbol id_name);
 
+  
   template <class K, class V>
   std::map<K, bool> initCheckMap(const std::map<K, V>&) const;
 
