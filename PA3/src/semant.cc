@@ -565,66 +565,66 @@ bool ClassTable::checkExpressionType(const Symbol type_defined_in,
 void ClassTable::getExpressionType(
   Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
 
-    // If the input expression is NULL (expression does not exist)
+	// If the input expression is NULL (expression does not exist)
 	assert(expr_in != NULL);
 
-    // early return
+	// early return
 	if (expr_in->get_type() != NULL){ return ; }
 
 	// infer type and perform type checking when (expr_in->get_type != NULL)
-    // if expression type is no_expr, return NULL(no_expr)
-    else if (typeid(*expr_in) == typeid(no_expr_class)){
-        expr_in->set_type(No_type);
-    }
+	// if expression type is no_expr, return NULL(no_expr)
+	else if (typeid(*expr_in) == typeid(no_expr_class)){
+		expr_in->set_type(No_type);
+	}
 
 	// deal with all consts
 	// only infer type, no type checking is performed here
-    // infer type for int_const
-    else if (typeid(*expr_in) == typeid(int_const_class)){
-        expr_in->set_type(Int);
-    }
-    else if (typeid(*expr_in) == typeid(bool_const_class)){
-        expr_in->set_type(Bool);
-    }
-    else if (typeid(*expr_in) == typeid(string_const_class)){
-        expr_in->set_type(Str);
-    }
-    else if (typeid(*expr_in) == typeid(object_class)){
-    	object_class * expr_obj = (object_class *) expr_in;
-        Symbol object_type = *scope_table.lookup(expr_obj->get_name());
-        expr_in->set_type(object_type);
-    }
+	// infer type for int_const
+	else if (typeid(*expr_in) == typeid(int_const_class)){
+		expr_in->set_type(Int);
+	}
+	else if (typeid(*expr_in) == typeid(bool_const_class)){
+		expr_in->set_type(Bool);
+	}
+	else if (typeid(*expr_in) == typeid(string_const_class)){
+		expr_in->set_type(Str);
+	}
+	else if (typeid(*expr_in) == typeid(object_class)){
+		object_class * expr_obj = (object_class *) expr_in;
+		Symbol object_type = *scope_table.lookup(expr_obj->get_name());
+		expr_in->set_type(object_type);
+	}
 
-    // isvoid
-    else if (typeid(*expr_in) == typeid(isvoid_class)){
-        isvoid_class * expr_isvoid = (isvoid_class *) expr_in;
+	// isvoid
+	else if (typeid(*expr_in) == typeid(isvoid_class)){
+		isvoid_class * expr_isvoid = (isvoid_class *) expr_in;
 		getExpressionType(c,expr_isvoid->get_expr(),scope_table);
-        expr_in->set_type(Bool);
-    }
+		expr_in->set_type(Bool);
+	}
 
 
-    // new_class
-    else if (typeid(*expr_in) == typeid(new__class)){
-        new__class * expr_new = (new__class *) expr_in;
-        Symbol type_name = expr_new->get_type_name();
+	// new_class
+	else if (typeid(*expr_in) == typeid(new__class)){
+		new__class * expr_new = (new__class *) expr_in;
+		Symbol type_name = expr_new->get_type_name();
 
-        // std::cout << "Type: " << type_name << std::endl;
-        // std::cout << "hasKeyInMap(type_name,inher_map_): " << hasKeyInMap(type_name,inher_map_) << std::endl;
+		// std::cout << "Type: " << type_name << std::endl;
+		// std::cout << "hasKeyInMap(type_name,inher_map_): " << hasKeyInMap(type_name,inher_map_) << std::endl;
 
-        if (!hasKeyInMap(type_name,inher_map_)){
-            semant_error(c->get_filename(),expr_in) << "'new' used with undefined class "
-                                                       << type_name <<"." << std::endl;
-        }
-        expr_new->set_type(type_name);
-    }
+		if (!hasKeyInMap(type_name,inher_map_)){
+			semant_error(c->get_filename(),expr_in) << "'new' used with undefined class "
+													   << type_name <<"." << std::endl;
+		}
+		expr_new->set_type(type_name);
+	}
 
 	// check expression type and infer type
 	// assign class
 	else if (typeid(*expr_in) == typeid(assign_class)){
 		assign_class * expr_assign = (assign_class *) expr_in;
 		// get the type from the sub-expression
-        // std::cout << "ASSIGN: get expr: " ;
-        // expr_assign->get_expr()->dump(std::cout,0);
+		// std::cout << "ASSIGN: get expr: " ;
+		// expr_assign->get_expr()->dump(std::cout,0);
 		getExpressionType(c, expr_assign->get_expr(),scope_table);
 		Symbol type_infer = expr_assign->get_expr()->get_type();
 
@@ -636,7 +636,7 @@ void ClassTable::getExpressionType(
 			semant_type_error(c,expr_in,type_infer,type_defined,expr_assign->get_name());
 		}
 
-        expr_assign->set_type(type_infer);
+		expr_assign->set_type(type_infer);
 	}
 
 	// condition
@@ -655,10 +655,10 @@ void ClassTable::getExpressionType(
 
 		Symbol type_lup = getSharedParent(type_then,type_else);
 		expr_cond->set_type(type_lup);
-    }
+	}
 
-    // loop
-    else if (typeid(*expr_in) == typeid(loop_class)){
+	// loop
+	else if (typeid(*expr_in) == typeid(loop_class)){
 		loop_class * expr_loop = (loop_class *) expr_in;
 
 		getExpressionType(c,expr_loop->get_pred(),scope_table);
@@ -674,44 +674,44 @@ void ClassTable::getExpressionType(
 		}
 
 		expr_in->set_type(Object);
-    }
+	}
 
-    // block
-    else if (typeid(*expr_in) == typeid(block_class)){
-        block_class * expr_block = (block_class *) expr_in;
-        Expressions expr_body = expr_block->get_body();
-        // get the Symbol of last body as the Symbol for this block
-        // perform type checking along the way
-        Symbol last_symbol;
-        for (int i = 0; i < expr_body->len(); i++){
-            Expression expr_tmp = expr_body->nth(i);
+	// block
+	else if (typeid(*expr_in) == typeid(block_class)){
+		block_class * expr_block = (block_class *) expr_in;
+		Expressions expr_body = expr_block->get_body();
+		// get the Symbol of last body as the Symbol for this block
+		// perform type checking along the way
+		Symbol last_symbol;
+		for (int i = 0; i < expr_body->len(); i++){
+			Expression expr_tmp = expr_body->nth(i);
 			getExpressionType(c, expr_tmp, scope_table);
-            last_symbol = expr_tmp->get_type();
-        }
-        expr_block->set_type(last_symbol);
-    }
-    // not
-    else if (typeid(*expr_in) == typeid(comp_class)){
-    	comp_class * expr_comp = (comp_class *) expr_in;
+			last_symbol = expr_tmp->get_type();
+		}
+		expr_block->set_type(last_symbol);
+	}
+	// not
+	else if (typeid(*expr_in) == typeid(comp_class)){
+		comp_class * expr_comp = (comp_class *) expr_in;
 		getExpressionType(c,expr_comp->get_expr(),scope_table);
-    	if (expr_comp->get_expr()->get_type() != Bool){
+		if (expr_comp->get_expr()->get_type() != Bool){
 			// TODO
 			semant_error(c) << "comp:expr is invalid" << std::endl;
-    	}
-    	expr_comp->set_type(Bool);
-    }
-    // less than
+		}
+		expr_comp->set_type(Bool);
+	}
+	// less than
 	else if (typeid(*expr_in) == typeid(lt_class)){
-    	lt_class * expr_lt = (lt_class *) expr_in;
+		lt_class * expr_lt = (lt_class *) expr_in;
 
 		getExpressionType(c,expr_lt->get_e1(),scope_table);
 		getExpressionType(c,expr_lt->get_e2(),scope_table);
 
 
-    	if (expr_lt->get_e1()->get_type() != Int){
+		if (expr_lt->get_e1()->get_type() != Int){
 			// TODO
 			semant_error(c) << "comp<lt>:expr is invalid" << std::endl;
-    	}
+		}
 
 		if (expr_lt->get_e2()->get_type() != Int){
 			// TODO
@@ -719,7 +719,7 @@ void ClassTable::getExpressionType(
 		}
 
 		expr_lt->set_type(Bool);
-    }
+	}
 	// less than equal
 	else if (typeid(*expr_in) == typeid(leq_class)){
 		leq_class * expr_leq = (leq_class *) expr_in;
@@ -740,23 +740,37 @@ void ClassTable::getExpressionType(
 		expr_leq->set_type(Bool);
 	}
 	// neg
-    else if (typeid(*expr_in) == typeid(neg_class)){
-        neg_class * expr_neg = (neg_class *) expr_in;
+	else if (typeid(*expr_in) == typeid(neg_class)){
+		neg_class * expr_neg = (neg_class *) expr_in;
 
 		getExpressionType(c,expr_neg->get_expr(),scope_table);
 		Symbol type_1 = expr_neg->get_expr()->get_type();
 
-        if (type_1 != Int){
-            semant_error(c->get_filename(),expr_in) << "Argument of '~' has type "<< type_1
-                                                    <<" instead of Int." << std::endl;
-        }
-        expr_neg->set_type(type_1);
-    }
-
-
-	// raise error if still no match
-	throw 6;
-
+		if (type_1 != Int){
+			semant_error(c->get_filename(),expr_in) << "Argument of '~' has type "<< type_1
+													<<" instead of Int." << std::endl;
+		}
+		expr_neg->set_type(type_1);
+	} else if (true /*+*/) {
+		;
+	} else if (true /*-*/) {
+		;
+	} else if (true /***/) {
+		;
+	} else if (true /*/*/) {
+		;
+	} else if (true /* static dispatch */) {
+		;
+	} else if (true /* dynamic dispathc */) {
+		;
+	} else if (true /* let */) {
+		;
+	} else if (true /* branch */) {
+		;
+	} else {
+		// raise error if still no match
+		throw 6;
+	}
 }
 
 
