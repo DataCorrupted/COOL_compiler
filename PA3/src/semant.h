@@ -41,7 +41,8 @@ public:
   void checkFeatureInheritance();
     void collectFeatures(Class_);
   void checkEachClassType();
-    void checkMethodsType(Class_);
+    void checkMethodsReturnType(Class_);
+    bool isMethodSignTypeValid(Class_, Method);
   void checkMethodInheritance();
 
   // return NULL on type_check failure / NULL is passed as expr_in
@@ -71,7 +72,7 @@ public:
   std::map<K, bool> initCheckMap(std::map<K, V>&);
 
   template <class K, class V>
-  bool hasKeyInMap(K, std::map<K, V>);
+  bool hasKeyInMap(K, std::map<K, V>&);
   std::map<Symbol, Class_>& getMap(){ return inher_map_; }
 };
 

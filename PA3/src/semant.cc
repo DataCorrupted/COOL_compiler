@@ -12,6 +12,7 @@
 #include <string>
 #include <typeinfo>
 #include <vector>
+#include <sstream>
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -100,7 +101,7 @@ std::map<K, bool> ClassTable::initCheckMap(std::map<K, V>& tmpl_map){
 }
 
 template <class K, class V>
-bool ClassTable::hasKeyInMap(K key, std::map<K, V> map_){
+bool ClassTable::hasKeyInMap(K key, std::map<K, V>& map_){
 	return map_.find(key) != map_.end();
 }
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
@@ -315,10 +316,10 @@ std::string getMethodSignature(Method m){
 	
 	// Add formals.
 	signature.append("(");
-	Formals formals = m->getFormals();
-	for (int i=0; i<formals->len(); i++){
-		signature.append(formals->nth(i)->getType()->get_string());
-		if (i != formals->len() - 1){
+	Formals f = m->getFormals();
+	for (int i=0; i<f->len(); i++){
+		signature.append(f->nth(i)->getType()->get_string());
+		if (i != f->len() - 1){
 			signature.append(", ");
 		}
 	}
@@ -379,6 +380,7 @@ void ClassTable::collectFeatures(Class_ c){
 			}
 		} else {
 			Method m = (Method) f;
+
 			// In it's parent's method table, this is a inherited method.
 			if (hasKeyInMap(m->getName(), method_map_[c->getParent()])) {
 				Method parent_method = method_map_[c->getName()][f->getName()];
@@ -444,12 +446,36 @@ void ClassTable::checkFeatureInheritance(){
 	}
 }
 
-
-void ClassTable::checkMethodsType(Class_ c){
+bool ClassTable::isMethodSignTypeValid(Class_ c, Method m){
+	bool is_sign_correct = true;
+	std::stringstream undefined_type;
+	// Method can be SELF_TYPE
+	if (m->getType() != SELF_TYPE && !hasKeyInMap(m->getType(), inher_map_)){
+		if (!is_sign_correct) {	undefined_type << ", ";	}
+		undefined_type << m->getType();
+		is_sign_correct = false;
+	}
+	Formals f = m->getFormals();
+	for (int i=0; i<f->len(); i++){
+		Symbol type_name = f->nth(i)->getType();
+		if (!hasKeyInMap(type_name, inher_map_)){
+			if (!is_sign_correct) {	undefined_type << ", ";	}
+			undefined_type << m->getType();
+			is_sign_correct = false;
+		}
+	}
+	if (!is_sign_correct){
+		semant_error(c->get_filename(), m)
+			<< "Method " << c->getName() << "." << getMethodSignature(m)
+			<< " got undefined type: " << undefined_type.str() << "\n";
+	}
+	return is_sign_correct;
+}
+void ClassTable::checkMethodsReturnType(Class_ c){
 	// It's not necessary anymore whether father or son goes first.
 	// But we still did it anyway.
 	if (c->getName() != Object && !checked_[c->getParent()]){
-		checkMethodsType(inher_map_[c->getParent()]);
+		checkMethodsReturnType(inher_map_[c->getParent()]);
 	}
 
 	Symbol class_name = c->getName();
@@ -469,11 +495,17 @@ void ClassTable::checkMethodsType(Class_ c){
 		Method m = iter->second;
 		std::map<Symbol, Method>& parent_method 
 			= method_map_[inher_map_[c->getParent()]->getName()];
+
 		// That this method is inherited from the parent,
 		// furthermore, they are the same.
 		// Then we skip this method as it has been checked previously.
-		if (parent_method.find(iter->first) != parent_method.end() 
-		  && parent_method.find(iter->first)->second == m) {
+		if (hasKeyInMap(iter->first, parent_method)
+		  && parent_method[iter->first] == m) {
+			continue;
+		}
+
+		// This method contains unknown type in it's signature.
+		if (!isMethodSignTypeValid(c, m)){
 			continue;
 		}
 
@@ -483,8 +515,7 @@ void ClassTable::checkMethodsType(Class_ c){
 		Symbol returned_type = getExpressionType(c, m->getExpr(), tbl);
 		//std::cerr << c->getName() << "." << getMethodSignature(m) << std::endl;
 		tbl.exitscope();
-
-		if ( ( returned_type != NULL ) && le(returned_type, m->getType()) ){
+		if ( ( returned_type != NULL ) && !le(returned_type, m->getType()) ){
 			semant_error(c->get_filename(), m)
 				<< "Method " << c->getName() << "." << getMethodSignature(m)
 				<< " expected return type: " << m->getType() << ", "
@@ -506,7 +537,7 @@ void ClassTable::checkEachClassType(){
 		if (checked_[iter->first]){
 			continue;
 		} else {
-			checkMethodsType(iter->second);
+			checkMethodsReturnType(iter->second);
 		}
 	}
 }
