@@ -510,6 +510,11 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+   Symbol get_id(){return identifier;}
+   Symbol get_type_decl(){return type_decl;}
+   Expression get_init(){ return init;}
+   Expression get_body(){ return body;}
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif

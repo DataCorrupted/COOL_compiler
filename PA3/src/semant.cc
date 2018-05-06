@@ -753,8 +753,42 @@ void ClassTable::getExpressionType(
 	} else if (typeid(*expr_in) == typeid(dispatch_class) /* dynamic dispathc */) {
 		assignDispatchType<dispatch_class*>(c, expr_in, scope_table);
 
-	} else if (true /* let */) {
-		;
+	} else if (typeid(*expr_in) == typeid(let_class) /* let */) {
+		let_class * expr_let = (let_class *) expr_in;
+
+		scope_table.enterscope();
+
+		Symbol id = expr_let->get_id();
+	    Symbol type_defined = expr_let->get_type_decl();
+	    if (type_defined != SELF_TYPE && !hasKeyInMap(type_defined,inher_map_) ){
+	    	//TODO: type not defined (class not decleared)
+	    }
+
+	    // deal with init (assign and creat new value)
+	    Expression init = expr_let->get_init();
+	    getExpressionType(c,init,scope_table);
+	    if (init->get_type() != No_type){
+            checkExpressionType(type_defined,init->get_type(),scope_table,c->getName());
+	    }
+
+	    
+        scope_table.addid(id,&type_defined);
+
+	    // std::cerr << "Here" << std::endl;
+
+	    // deal with expr
+		Expression expr_body = expr_let->get_body();
+		getExpressionType(c,expr_body,scope_table);
+		if (!checkExpressionType(type_defined,expr_body->get_type(),scope_table,c->getName())){
+			// TODO (type mismatch)
+		}
+		expr_let->set_type(expr_body->get_type());
+
+        // std::cerr << "Here2" << std::endl;
+
+	    scope_table.exitscope();
+
+
 	} else if (true /* branch */) {
 		;
 	} else {
