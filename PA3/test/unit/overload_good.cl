@@ -17,7 +17,7 @@ class Main{
 };
 
 class A inherits Main{
-	foo(): Bool{
+	foo(): Int{
 		2
 	};
 };

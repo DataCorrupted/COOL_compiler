@@ -596,8 +596,16 @@ void ClassTable::getExpressionType(
 	}
 	else if (typeid(*expr_in) == typeid(object_class)){
 		object_class * expr_obj = (object_class *) expr_in;
-		Symbol object_type = *scope_table.lookup(expr_obj->get_name());
-		expr_in->set_type(object_type);
+		Symbol * object_type_ptr = scope_table.lookup(expr_obj->get_name());
+		if (object_type_ptr == NULL){
+		    // if object not defined before
+            semant_error(c->get_filename(),expr_in) << "Undeclared identifier "<<expr_obj->get_name()
+                                                    <<"." << std::endl;
+		    expr_in->set_type(Object);
+		}
+		else {
+            expr_in->set_type(*object_type_ptr);
+        }
 	}
 
 	// isvoid
@@ -635,6 +643,7 @@ void ClassTable::getExpressionType(
 		// type checking
 		// std::cout << "type_inferred: " << type_infer << std::endl;
 		Symbol type_defined = *scope_table.lookup(expr_assign->get_name());
+
 		// std::cout << "type_defined: " << type_defined  << std::endl;
 		if (!checkExpressionType(type_defined,type_infer,scope_table,c->getName())){
 			semant_type_error(c,expr_in,type_infer,type_defined,expr_assign->get_name());
@@ -771,10 +780,10 @@ void ClassTable::getExpressionType(
             checkExpressionType(type_defined,init->get_type(),scope_table,c->getName());
 	    }
 
-	    
+
         scope_table.addid(id,&type_defined);
 
-	    // std::cerr << "Here" << std::endl;
+	    std::cerr << "Here" << std::endl;
 
 	    // deal with expr
 		Expression expr_body = expr_let->get_body();

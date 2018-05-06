@@ -9,4 +9,8 @@ class Main{
 			x + 2;
 		}
 	};
+
+	foo(): Int{
+		mid <- (let x : Int <- x in (x < 12))
+	};
 };
