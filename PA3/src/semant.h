@@ -53,7 +53,7 @@ public:
                            const SymbolTable<Symbol, Symbol>& scope_table,
                            const Symbol class_name);
 
-  const bool le(Symbol, Symbol) const;
+  const bool le(Symbol, const Symbol) const;
   const Symbol getSharedParent(const Symbol, const Symbol) const;
   const std::deque<Symbol> getInherVec(Symbol) const;
 

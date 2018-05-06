@@ -405,19 +405,20 @@ void ClassTable::collectFeatures(const Class_ c){
 				}
 				if (!legal_inhertance){
 					semant_error(c->getFilename(), f) 
-						<< "Class " << c->getName()
-						<< " has method: " << getMethodSignature(m)
-						<< "\n\twhich disagrees with it's parents' method: "
-						<< getMethodSignature(parent_method) << "\n"
+						<< "Method " << c->getName() << "." << getMethodSignature(m)
+						<< " disagrees with it's parents' method: "
+						<< c->getParent() << "." << getMethodSignature(parent_method) 
+						<< "\n"
 					;
 				}
 
 			// In itself's method table, this is a duplicated method.
 			} else if (hasKeyInMap(m->getName(), method_map_[c->getName()]))  {
 				semant_error(c->getFilename(), f)
-					<< "Class " << c->getName()
-					<< " has duplicated methods. We will ignore the later definition, " 
-					<< "which has the signature: " << 	getMethodSignature(m) << "\n";
+					<< "Method " << c->getName() << "." << getMethodSignature(m)
+					<< " has been defined in line " 
+					<< method_map_[c->getName()][f->getName()]->get_line_number()
+					<< ". We will ignore this definition\n";
 
 			// We got a new method!
 			} else {
@@ -472,13 +473,14 @@ const bool ClassTable::isMethodSignTypeValid(const Class_ c, const Method m){
 	return is_sign_correct;
 }
 void ClassTable::checkMethodsReturnType(const Class_ c){
+	Symbol class_name = c->getName();
+	
 	// It's not necessary anymore whether father or son goes first.
 	// But we still did it anyway.
-	if (c->getName() != Object && !checked_[c->getParent()]){
+	if (class_name != Object && !checked_[c->getParent()]){
 		checkMethodsReturnType(inher_map_[c->getParent()]);
 	}
 
-	Symbol class_name = c->getName();
 	// Add every attribute of this class to symbol table.
 	SymbolTable<Symbol, Symbol> tbl;
 	tbl.enterscope();
@@ -493,14 +495,14 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 	  iter != method_map_[class_name].end();
 	  ++iter){
 		Method m = iter->second;
-		std::map<Symbol, Method>& parent_method 
+		std::map<Symbol, Method>& parent_methods 
 			= method_map_[inher_map_[c->getParent()]->getName()];
 
 		// That this method is inherited from the parent,
 		// furthermore, they are the same.
 		// Then we skip this method as it has been checked previously.
-		if (hasKeyInMap(iter->first, parent_method)
-		  && parent_method[iter->first] == m) {
+		if (hasKeyInMap(iter->first, parent_methods)
+		  && parent_methods[iter->first] == m) {
 			continue;
 		}
 
@@ -514,9 +516,10 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 		Symbol returned_type = getExpressionType(c, m->getExpr(), tbl);
 		tbl.exitscope();
 
-		if ( ( returned_type != NULL ) && 
-		  (m->getType() != SELF_TYPE && !le(returned_type, m->getType()) 
-		  || m->getType() == SELF_TYPE && !le(returned_type, c->getName()))){
+		Symbol expr_cast = (returned_type == SELF_TYPE) ? c->getName() : returned_type;
+		if ((returned_type == NULL) || 
+		  m->getType() != SELF_TYPE && !le(expr_cast, m->getType()) ||
+		  m->getType() == SELF_TYPE && returned_type != SELF_TYPE){
 			semant_error(c->get_filename(), m)
 				<< "Method " << c->getName() << "." << getMethodSignature(m)
 				<< " expected return type: " << m->getType() << ", "
@@ -524,6 +527,8 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 			;
 		}
 	}
+	// Label this class as been checked.
+	checked_[class_name] = true;
 }
 void ClassTable::checkEachClassType(){
 	checked_ = initCheckMap(inher_map_);
@@ -787,7 +792,7 @@ Symbol ClassTable::getExpressionType(
 }
 
 
-const bool ClassTable::le(Symbol a, Symbol b) const {
+const bool ClassTable::le(Symbol a, const Symbol b) const {
 	// Everyone is le Object.
 	if (b == Object) { return true; }
 	// Find a's parent until it gets to b.
