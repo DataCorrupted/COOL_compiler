@@ -53,6 +53,8 @@ public:
   // return NULL on type_check failure / NULL is passed as expr_in
   void getExpressionType(Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
   
+  template <class Dispatch>
+  void assignDispatchType(const Class_ c, Expression e, SymbolTable<Symbol, Symbol>& tbl);
   template <class Compare>
   void assignCompareType(const Class_, Expression, SymbolTable<Symbol, Symbol>&);
   template <class Arithmetic>

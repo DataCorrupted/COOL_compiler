@@ -742,11 +742,15 @@ void ClassTable::getExpressionType(
 	// /
 	} else if (typeid(*expr_in) == typeid(divide_class)) {
 		assignArithmeticType<divide_class*>(c, expr_in, scope_table);
-	  	
-	} else if (true /* static dispatch */) {
-		;
-	} else if (true /* dynamic dispathc */) {
-		;
+	
+	// static dispatch
+	} else if (typeid(*expr_in) == typeid(static_dispatch_class) ) {
+		assignDispatchType<static_dispatch_class*>(c, expr_in, scope_table);
+
+	// dynamic dispatch
+	} else if (typeid(*expr_in) == typeid(dispatch_class) /* dynamic dispathc */) {
+		assignDispatchType<dispatch_class*>(c, expr_in, scope_table);
+
 	} else if (true /* let */) {
 		;
 	} else if (true /* branch */) {
@@ -755,6 +759,81 @@ void ClassTable::getExpressionType(
 		// raise error if still no match
 		throw 6;
 	}
+}
+
+template <class Dispatch>
+void ClassTable::assignDispatchType(
+  const Class_ c, Expression e, SymbolTable<Symbol, Symbol>& tbl){
+  	
+  	Dispatch d = dynamic_cast<Dispatch>(e);
+
+  	/* Evaluate each expression.*/
+	getExpressionType(c, d->getExpr(), tbl);
+	Expressions expr_list = d->getExprList();
+	for (int i=0; i<expr_list->len(); i++){
+		getExpressionType(c, expr_list->nth(i), tbl);
+	} 
+
+	/* Determine dispatch type. */
+	Symbol dispatch_type;
+	// Static dispatch.
+	if (typeid(Dispatch) == typeid(static_dispatch_class*)){
+		dispatch_type = d->getDispatchType();
+	// Dynamic dispatch with SELF_TYPE, using current class's type. 
+	} else if (d->getExpr()->get_type() == SELF_TYPE) {
+			dispatch_type = c->getName();
+	// Dynamic dispatch using expr's type.
+	} else {
+		dispatch_type = d->getExpr()->get_type();
+	}
+
+	/* Check if the type exists and if the method exists. */
+	if (!hasKeyInMap(dispatch_type, inher_map_)){
+		semant_error(c->get_filename(), e)
+			<< "Dispatch to undefined class " << dispatch_type;
+		;
+		// TODO: No type to return when we can't even find this method.
+		return;
+	}
+	if (!hasKeyInMap(d->getName(), method_map_[dispatch_type])){
+		semant_error(c->get_filename(), e)
+			<< "Dispatch to undefined method " << d->getName();
+		;
+		// TODO: No type to return either.
+		return;
+	}
+
+	/* Check parameters. */
+	Method m = method_map_[dispatch_type][d->getName()];
+	Formals formal_list = m->getFormals();
+	// Length should be the same.
+	if (formal_list->len() != expr_list->len()){
+		semant_error(c->get_filename(), e)
+			<< "Method m called with wrong number of arguments."
+			<< "Expected " << formal_list->len() << "parameters, "
+			<< "got " << expr_list->len() << "\n";
+		;
+	}
+	// And each parameter should have a type le method's definition.
+	for (int i=0; i<formal_list->len(); i++){
+		Symbol expr_type = expr_list->nth(i)->get_type();
+		Symbol form_type = formal_list->nth(i)->getType();
+		// Can't have SELF_TYPE as parameter type.
+		if (expr_type == SELF_TYPE || !le(expr_type, form_type)){
+			semant_error(c->get_filename(), e)
+				<< "In call of method " << c->getName() << "." << m->getMethodSignature()
+				<< " parameter " << i << "expected type " << form_type
+				<< ", got type " << expr_type << "\n";
+			;
+		}
+	}
+
+	/* Determine return type. */
+	Symbol returned_type = m->getType();
+	if (returned_type == SELF_TYPE){
+		returned_type = d->getExpr()->get_type();
+	}
+	e->set_type(returned_type);
 }
 
 template <class Compare>

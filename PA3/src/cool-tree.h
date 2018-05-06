@@ -351,6 +351,11 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+   const Expression getExpr() const { return expr; };
+   const Symbol getDispatchType() const { return type_name; };
+   const Symbol getName() const { return name; };
+   const Expressions getExprList() const { return actual; };
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -374,6 +379,11 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+   const Expression getExpr() const { return expr; };
+   const Symbol getDispatchType() const {return NULL;} 
+   const Symbol getName() const { return name; };
+   const Expressions getExprList() const { return actual; };
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
