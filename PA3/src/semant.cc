@@ -610,10 +610,7 @@ void ClassTable::getExpressionType(
 		new__class * expr_new = (new__class *) expr_in;
 		Symbol type_name = expr_new->get_type_name();
 
-		// std::cout << "Type: " << type_name << std::endl;
-		// std::cout << "hasKeyInMap(type_name,inher_map_): " << hasKeyInMap(type_name,inher_map_) << std::endl;
-
-		if (!hasKeyInMap(type_name,inher_map_)){
+		if (type_name != SELF_TYPE && !hasKeyInMap(type_name,inher_map_)){
 			semant_error(c->get_filename(),expr_in) << "'new' used with undefined class "
 													   << type_name <<"." << std::endl;
 		}
@@ -767,7 +764,8 @@ void ClassTable::assignDispatchType(
   	
   	Dispatch d = dynamic_cast<Dispatch>(e);
 
-  	/* Evaluate each expression.*/
+
+  	/* Evaluate each and every expression. */
 	getExpressionType(c, d->getExpr(), tbl);
 	Expressions expr_list = d->getExprList();
 	for (int i=0; i<expr_list->len(); i++){
@@ -788,18 +786,13 @@ void ClassTable::assignDispatchType(
 	}
 
 	/* Check if the type exists and if the method exists. */
-	if (!hasKeyInMap(dispatch_type, inher_map_)){
+	if (!hasKeyInMap(dispatch_type, inher_map_) || 
+		!hasKeyInMap(d->getName(), method_map_[dispatch_type])){
 		semant_error(c->get_filename(), e)
-			<< "Dispatch to undefined class " << dispatch_type;
+			<< "Dispatch to undefined class/method " 
+			<< dispatch_type << "." << d->getName() << "\n";
 		;
-		// TODO: No type to return when we can't even find this method.
-		return;
-	}
-	if (!hasKeyInMap(d->getName(), method_map_[dispatch_type])){
-		semant_error(c->get_filename(), e)
-			<< "Dispatch to undefined method " << d->getName();
-		;
-		// TODO: No type to return either.
+		e->set_type(Object);
 		return;
 	}
 
@@ -815,6 +808,7 @@ void ClassTable::assignDispatchType(
 		;
 	}
 	// And each parameter should have a type le method's definition.
+	int len = std::min(formal_list->len(), expr_list->len());
 	for (int i=0; i<formal_list->len(); i++){
 		Symbol expr_type = expr_list->nth(i)->get_type();
 		Symbol form_type = formal_list->nth(i)->getType();

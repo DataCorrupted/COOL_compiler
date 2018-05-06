@@ -1,8 +1,9 @@
 class Main{
+	b: Bool;
+	a: A <- new A;
 	main(): Int{{
-		let a:A <- new A in {
-			a.m(new SELF_TYPE, 1);
-		};
+		new SELF_TYPE;
+		b <- a.c(new SELF_TYPE, 1);
 		1;
 	}};
 };
