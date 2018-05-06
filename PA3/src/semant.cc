@@ -386,7 +386,7 @@ void ClassTable::collectFeatures(const Class_ c){
 				if (!legal_inhertance){
 					semant_error(c->get_filename(), f) 
 						<< "Method " << c->getName() << "." << m->getMethodSignature()
-						<< " disagrees with it's parents' method: "
+						<< " has different sinature with it's parents' method: "
 						<< c->getParent() << "." << parent_method->getMethodSignature() 
 						<< "\n"
 					;
@@ -796,7 +796,7 @@ const std::deque<Symbol> ClassTable::getInherVec(Symbol curr) const {
 }
 
 // a helper function for type checking semant error
-ostream& ClassTable::semant_type_error(Class_  c, tree_node *expr_in , Symbol type_infer, Symbol type_defined,
+void ClassTable::semant_type_error(Class_  c, tree_node *expr_in , Symbol type_infer, Symbol type_defined,
 									   Symbol id_name) {
 	semant_error(c->get_filename(),expr_in) << "Type " << type_infer
 											<< " of assigned expression does not conform to declared type "
