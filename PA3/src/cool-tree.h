@@ -4,14 +4,14 @@
 //
 // file: cool-tree.h
 //
-// This file defines classes for each phylum and constructor
+// ile defines classes for each phylum and constructor
 //
 //////////////////////////////////////////////////////////
 
 
 #include "tree.h"
 #include "cool-tree.handcode.h"
-
+#include <sstream>
 
 // define the class for phylum
 // define simple phylum - Program
@@ -36,10 +36,9 @@ public:
    tree_node *copy()		 { return copy_Class_(); }
    virtual Class_ copy_Class_() = 0;
 
-   virtual Symbol getName() = 0;
-   virtual Symbol getParent() = 0;
-   virtual Features getFeatures() = 0;
-   virtual Symbol getFilename() = 0;
+   virtual const Symbol getName() const = 0;
+   virtual const Symbol getParent() const = 0;
+   virtual const Features getFeatures() const = 0;
 #ifdef Class__EXTRAS
    Class__EXTRAS
 #endif
@@ -53,8 +52,8 @@ class Feature_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
-   virtual bool isAttribute() = 0;
-   virtual Symbol getName() = 0;
+   virtual const bool isAttribute() const = 0;
+   virtual const Symbol getName() const = 0;
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -68,7 +67,7 @@ class Formal_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
-   virtual Symbol getType() = 0;
+   virtual const Symbol getType() const = 0;
 
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
@@ -168,10 +167,9 @@ public:
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
 
-   Symbol getName() { return name; };
-   Symbol getParent() { return parent; };
-   Features getFeatures() { return features; };
-   Symbol getFilename() { return filename; };
+   const Symbol getName() const { return name; };
+   const Symbol getParent() const { return parent; };
+   const Features getFeatures() const { return features; };
 
 #ifdef Class__SHARED_EXTRAS
    Class__SHARED_EXTRAS
@@ -199,11 +197,34 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
-   bool isAttribute() { return false; }
-   Symbol getName() { return name; }
-   Formals getFormals() { return formals; }
-   Symbol getType() { return return_type; }
-   Expression getExpr() { return expr; }
+   const bool isAttribute() const { return false; }
+   const Symbol getName() const { return name; }
+   const Formals getFormals() const { return formals; }
+   const Symbol getType() const { return return_type; }
+   const Expression getExpr() const { return expr; }
+
+   const std::string getMethodSignature() const{
+      std::stringstream signature;
+      // Add method name.
+      signature << getName();
+      
+      // Add formals.
+      signature << "(";
+      Formals f = getFormals();
+      for (int i=0; i<f->len(); i++){
+         signature << f->nth(i)->getType();
+         if (i != f->len() - 1){
+            signature << ", ";
+         }
+      }
+      signature << "): ";
+
+      // Add return type.
+      signature << getType();
+      signature << ";";
+      return signature.str();
+   }
+
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -228,9 +249,9 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
-   bool isAttribute() { return true; }
-   Symbol getName() { return name; }
-   Symbol getType() { return type_decl; }
+   const bool isAttribute() const { return true; }
+   const Symbol getName() const { return name; }
+   const Symbol getType() const { return type_decl; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -254,7 +275,7 @@ public:
    Formal copy_Formal();
    void dump(ostream& stream, int n);
 
-   Symbol getType() { return type_decl; }
+   const Symbol getType() const { return type_decl; }
 #ifdef Formal_SHARED_EXTRAS
    Formal_SHARED_EXTRAS
 #endif

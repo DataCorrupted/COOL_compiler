@@ -27,77 +27,77 @@ extern char *curr_filename;
 //
 //////////////////////////////////////////////////////////////////////
 static Symbol 
-    arg,
-    arg2,
-    Bool,
-    concat,
-    cool_abort,
-    copy,
-    Int,
-    in_int,
-    in_string,
-    IO,
-    length,
-    Main,
-    main_meth,
-    No_class,
-    No_type,
-    Object,
-    out_int,
-    out_string,
-    prim_slot,
-    self,
-    SELF_TYPE,
-    Str,
-    str_field,
-    substr,
-    type_name,
-    val;
+	arg,
+	arg2,
+	Bool,
+	concat,
+	cool_abort,
+	copy,
+	Int,
+	in_int,
+	in_string,
+	IO,
+	length,
+	Main,
+	main_meth,
+	No_class,
+	No_type,
+	Object,
+	out_int,
+	out_string,
+	prim_slot,
+	self,
+	SELF_TYPE,
+	Str,
+	str_field,
+	substr,
+	type_name,
+	val;
 //
 // Initializing the predefined symbols.
 //
 static void initialize_constants(void)
 {
-    arg         = idtable.add_string("arg");
-    arg2        = idtable.add_string("arg2");
-    Bool        = idtable.add_string("Bool");
-    concat      = idtable.add_string("concat");
-    cool_abort  = idtable.add_string("abort");
-    copy        = idtable.add_string("copy");
-    Int         = idtable.add_string("Int");
-    in_int      = idtable.add_string("in_int");
-    in_string   = idtable.add_string("in_string");
-    IO          = idtable.add_string("IO");
-    length      = idtable.add_string("length");
-    Main        = idtable.add_string("Main");
-    main_meth   = idtable.add_string("main");
-    //   _no_class is a symbol that can't be the name of any 
-    //   user-defined class.
-    No_class    = idtable.add_string("_no_class");
-    No_type     = idtable.add_string("_no_type");
-    Object      = idtable.add_string("Object");
-    out_int     = idtable.add_string("out_int");
-    out_string  = idtable.add_string("out_string");
-    prim_slot   = idtable.add_string("_prim_slot");
-    self        = idtable.add_string("self");
-    SELF_TYPE   = idtable.add_string("SELF_TYPE");
-    Str         = idtable.add_string("String");
-    str_field   = idtable.add_string("_str_field");
-    substr      = idtable.add_string("substr");
-    type_name   = idtable.add_string("type_name");
-    val         = idtable.add_string("_val");
+	arg         = idtable.add_string("arg");
+	arg2        = idtable.add_string("arg2");
+	Bool        = idtable.add_string("Bool");
+	concat      = idtable.add_string("concat");
+	cool_abort  = idtable.add_string("abort");
+	copy        = idtable.add_string("copy");
+	Int         = idtable.add_string("Int");
+	in_int      = idtable.add_string("in_int");
+	in_string   = idtable.add_string("in_string");
+	IO          = idtable.add_string("IO");
+	length      = idtable.add_string("length");
+	Main        = idtable.add_string("Main");
+	main_meth   = idtable.add_string("main");
+	//   _no_class is a symbol that can't be the name of any 
+	//   user-defined class.
+	No_class    = idtable.add_string("_no_class");
+	No_type     = idtable.add_string("_no_type");
+	Object      = idtable.add_string("Object");
+	out_int     = idtable.add_string("out_int");
+	out_string  = idtable.add_string("out_string");
+	prim_slot   = idtable.add_string("_prim_slot");
+	self        = idtable.add_string("self");
+	SELF_TYPE   = idtable.add_string("SELF_TYPE");
+	Str         = idtable.add_string("String");
+	str_field   = idtable.add_string("_str_field");
+	substr      = idtable.add_string("substr");
+	type_name   = idtable.add_string("type_name");
+	val         = idtable.add_string("_val");
 }
 
 
 template <class K, class V>
 std::map<K, bool> ClassTable::initCheckMap(const std::map<K, V>& tmpl_map) const{
-    std::map<K, bool> checked;
-    for(typename std::map<K, V>::const_iterator iter = tmpl_map.begin(); 
-      iter != tmpl_map.end(); 
-      ++iter){
-        checked.insert(std::pair<K, bool>(iter->first, false));
-    }	
-    return checked;
+	std::map<K, bool> checked;
+	for(typename std::map<K, V>::const_iterator iter = tmpl_map.begin(); 
+	  iter != tmpl_map.end(); 
+	  ++iter){
+		checked.insert(std::pair<K, bool>(iter->first, false));
+	}	
+	return checked;
 }
 
 template <class K, class V>
@@ -106,230 +106,209 @@ const bool ClassTable::hasKeyInMap(const K key, const std::map<K, V>& map_) cons
 }
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
 
-    /* Let's construct the basic classes first. */
-    install_basic_classes();
+	/* Let's construct the basic classes first. */
+	install_basic_classes();
 
-    /* Check the usage and the exsitence of each Symbol first.  */
-    for (int i = 0; i < classes->len(); i++){
+	/* Check the usage and the exsitence of each Symbol first.  */
+	for (int i = 0; i < classes->len(); i++){
 
-        Class_ curr = classes->nth(i);
-        
-        // You can't define SELF_TYPE as a class.
-        if (curr->getName() == SELF_TYPE){
-            semant_error(curr) << "Redefinition of basic class SELF_TYPE.\n";
+		Class_ curr = classes->nth(i);
+		
+		// You can't define SELF_TYPE as a class.
+		if (curr->getName() == SELF_TYPE){
+			semant_error(curr) << "Redefinition of basic class SELF_TYPE.\n";
 
-        // You can't define classes that have been declared too.
-        } else if (hasKeyInMap(curr->getName(), inher_map_)){
-            semant_error(curr) 
-            	<< "Redefinition of class " << curr->getName()
-            	<< ". Ignoring the later definition.\n";
+		// You can't define classes that have been declared too.
+		} else if (hasKeyInMap(curr->getName(), inher_map_)){
+			semant_error(curr) 
+				<< "Redefinition of class " << curr->getName()
+				<< ". Ignoring the later definition.\n";
 
-        // A fresh new class name, you are good to go.
-        } else {
-            inher_map_.insert(std::pair<Symbol, Class_>(curr->getName(), curr));
-        }
-    }
+		// A fresh new class name, you are good to go.
+		} else {
+			inher_map_.insert(std::pair<Symbol, Class_>(curr->getName(), curr));
+		}
+	}
 
-    /* Check for inhertance correctness.                    */
-    /* To guarantee speed, we only check one class once.    */
-    /* We use a map to record if one class has been checked.*/
-    /* Extra space made sure that the worst case time drop  */
-    /* from O(N2) to O(N) 									*/
-    
-    // Construct a map with all flags saying not checked yet.
-    // checked is a member of this class.
-    checked_ = initCheckMap(inher_map_);
-    for (std::map<Symbol, Class_>::iterator iter = inher_map_.begin(); 
-      iter != inher_map_.end(); 
-      ++iter){
+	/* Check for inhertance correctness.                    */
+	/* To guarantee speed, we only check one class once.    */
+	/* We use a map to record if one class has been checked.*/
+	/* Extra space made sure that the worst case time drop  */
+	/* from O(N2) to O(N) 									*/
+	
+	// Construct a map with all flags saying not checked yet.
+	// checked is a member of this class.
+	checked_ = initCheckMap(inher_map_);
+	for (std::map<Symbol, Class_>::iterator iter = inher_map_.begin(); 
+	  iter != inher_map_.end(); 
+	  ++iter){
 
-        // This class is checked before, we move on.
-        if (checked_[iter->first]) { continue; }
+		// This class is checked before, we move on.
+		if (checked_[iter->first]) { continue; }
 
-        // Take current class.
-        Class_ curr = iter->second;
+		// Take current class.
+		Class_ curr = iter->second;
 
-        // Label it as checked.
-        checked_[curr->getName()] = true;
-        Symbol parent_name = curr->getParent();
+		// Label it as checked.
+		checked_[curr->getName()] = true;
+		Symbol parent_name = curr->getParent();
 
-        // Vector to record dependency relation.
-        std::vector<Class_> dep;
-        dep.push_back(curr);
+		// Vector to record dependency relation.
+		std::vector<Class_> dep;
+		dep.push_back(curr);
 
-        // Either this class follows Object, or it's circular inherted.
-        while (curr->getName() != Object 
-            && parent_name != iter->second->getName()){
+		// Either this class follows Object, or it's circular inherted.
+		while (curr->getName() != Object 
+			&& parent_name != iter->second->getName()){
 
-            // First of all... the parent must exists,
-            if (!hasKeyInMap(parent_name, inher_map_)){
-                semant_error(curr) 
-                	<< "Class " << curr->getName() << " has undefined parent " 
-                	<< "class " << parent_name << " for inhertance.\n";
-                break;
+			// First of all... the parent must exists,
+			if (!hasKeyInMap(parent_name, inher_map_)){
+				semant_error(curr) 
+					<< "Class " << curr->getName() << " has undefined parent " 
+					<< "class " << parent_name << " for inhertance.\n";
+				break;
 
-            // and is not one of the following...
-            } else if (parent_name == SELF_TYPE || parent_name == Int 
-                    || parent_name == Bool || parent_name == Str) {
-                semant_error(curr) << "Class" << curr->getName() 
-                	<< " inherts from one of the following: SELF_TYPE, Int, Bool, Str,"
-                	<< " which is illegal.\n";
-                break;
+			// and is not one of the following...
+			} else if (parent_name == SELF_TYPE || parent_name == Int 
+					|| parent_name == Bool || parent_name == Str) {
+				semant_error(curr) << "Class" << curr->getName() 
+					<< " inherts from one of the following: SELF_TYPE, Int, Bool, Str,"
+					<< " which is illegal.\n";
+				break;
 
-            // then find the grand-parent.
-            } else {
-                curr = inher_map_[parent_name];
-                checked_[curr->getName()] = true;
-                dep.push_back(curr);
-                parent_name = curr->getParent();
-            }
-        }
-        // After all the searching for my parent, I found myself?
-        if (parent_name ==  iter->second->getName()){
-            semant_error(iter->second) << "Circular inhertance found: ";
-            for(unsigned int i=0; i<dep.size(); i++){
-            	error_stream << dep[i]->getName() << " -> ";
-            	if (i == dep.size() -1){
-            		error_stream << iter->second->getName() << ".\n";
-            	}
-            }
-        }
-    }
+			// then find the grand-parent.
+			} else {
+				curr = inher_map_[parent_name];
+				checked_[curr->getName()] = true;
+				dep.push_back(curr);
+				parent_name = curr->getParent();
+			}
+		}
+		// After all the searching for my parent, I found myself?
+		if (parent_name ==  iter->second->getName()){
+			semant_error(iter->second) << "Circular inhertance found: ";
+			for(unsigned int i=0; i<dep.size(); i++){
+				error_stream << dep[i]->getName() << " -> ";
+				if (i == dep.size() -1){
+					error_stream << iter->second->getName() << ".\n";
+				}
+			}
+		}
+	}
 
-    if (!hasKeyInMap(Main, inher_map_)){
-    	semant_error() << "Class Main not found.\n";
-    }
+	if (!hasKeyInMap(Main, inher_map_)){
+		semant_error() << "Class Main not found.\n";
+	}
 }
 
 void ClassTable::install_basic_classes() {
 
-    // The tree package uses these globals to annotate the classes built below.
+	// The tree package uses these globals to annotate the classes built below.
    // curr_lineno  = 0;
-    Symbol filename = stringtable.add_string("<basic class>");
-    
-    // The following demonstrates how to create dummy parse trees to
-    // refer to basic Cool classes.  There's no need for method
-    // bodies -- these are already built into the runtime system.
-    
-    // IMPORTANT: The results of the following expressions are
-    // stored in local variables.  You will want to do something
-    // with those variables at the end of this method to make this
-    // code meaningful.
+	Symbol filename = stringtable.add_string("<basic class>");
+	
+	// The following demonstrates how to create dummy parse trees to
+	// refer to basic Cool classes.  There's no need for method
+	// bodies -- these are already built into the runtime system.
+	
+	// IMPORTANT: The results of the following expressions are
+	// stored in local variables.  You will want to do something
+	// with those variables at the end of this method to make this
+	// code meaningful.
 
-    // 
-    // The Object class has no parent class. Its methods are
-    //        abort() : Object    aborts the program
-    //        type_name() : Str   returns a string representation of class name
-    //        copy() : SELF_TYPE  returns a copy of the object
-    //
-    // There is no need for method bodies in the basic classes---these
-    // are already built in to the runtime system.
+	// 
+	// The Object class has no parent class. Its methods are
+	//        abort() : Object    aborts the program
+	//        type_name() : Str   returns a string representation of class name
+	//        copy() : SELF_TYPE  returns a copy of the object
+	//
+	// There is no need for method bodies in the basic classes---these
+	// are already built in to the runtime system.
 
-    Class_ Object_class =
+	Class_ Object_class =
 	class_(Object, 
-	       No_class,
-	       append_Features(
-			       append_Features(
-					       single_Features(method(cool_abort, nil_Formals(), Object, no_expr())),
-					       single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
-			       single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
-	       filename);
+		   No_class,
+		   append_Features(
+				   append_Features(
+						   single_Features(method(cool_abort, nil_Formals(), Object, no_expr())),
+						   single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
+				   single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
+		   filename);
 
-    // 
-    // The IO class inherits from Object. Its methods are
-    //        out_string(Str) : SELF_TYPE       writes a string to the output
-    //        out_int(Int) : SELF_TYPE            "    an int    "  "     "
-    //        in_string() : Str                 reads a string from the input
-    //        in_int() : Int                      "   an int     "  "     "
-    //
-    Class_ IO_class = 
+	// 
+	// The IO class inherits from Object. Its methods are
+	//        out_string(Str) : SELF_TYPE       writes a string to the output
+	//        out_int(Int) : SELF_TYPE            "    an int    "  "     "
+	//        in_string() : Str                 reads a string from the input
+	//        in_int() : Int                      "   an int     "  "     "
+	//
+	Class_ IO_class = 
 	class_(IO, 
-	       Object,
-	       append_Features(
-			       append_Features(
-					       append_Features(
-							       single_Features(method(out_string, single_Formals(formal(arg, Str)),
-										      SELF_TYPE, no_expr())),
-							       single_Features(method(out_int, single_Formals(formal(arg, Int)),
-										      SELF_TYPE, no_expr()))),
-					       single_Features(method(in_string, nil_Formals(), Str, no_expr()))),
-			       single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
-	       filename);  
+		   Object,
+		   append_Features(
+				   append_Features(
+						   append_Features(
+								   single_Features(method(out_string, single_Formals(formal(arg, Str)),
+											  SELF_TYPE, no_expr())),
+								   single_Features(method(out_int, single_Formals(formal(arg, Int)),
+											  SELF_TYPE, no_expr()))),
+						   single_Features(method(in_string, nil_Formals(), Str, no_expr()))),
+				   single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
+		   filename);  
 
-    //
-    // The Int class has no methods and only a single attribute, the
-    // "val" for the integer. 
-    //
-    Class_ Int_class =
+	//
+	// The Int class has no methods and only a single attribute, the
+	// "val" for the integer. 
+	//
+	Class_ Int_class =
 	class_(Int, 
-	       Object,
-	       single_Features(attr(val, prim_slot, no_expr())),
-	       filename);
+		   Object,
+		   single_Features(attr(val, prim_slot, no_expr())),
+		   filename);
 
-    //
-    // Bool also has only the "val" slot.
-    //
-    Class_ Bool_class =
+	//
+	// Bool also has only the "val" slot.
+	//
+	Class_ Bool_class =
 	class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())),filename);
 
-    //
-    // The class Str has a number of slots and operations:
-    //       val                                  the length of the string
-    //       str_field                            the string itself
-    //       length() : Int                       returns length of the string
-    //       concat(arg: Str) : Str               performs string concatenation
-    //       substr(arg: Int, arg2: Int): Str     substring selection
-    //       
-    Class_ Str_class =
+	//
+	// The class Str has a number of slots and operations:
+	//       val                                  the length of the string
+	//       str_field                            the string itself
+	//       length() : Int                       returns length of the string
+	//       concat(arg: Str) : Str               performs string concatenation
+	//       substr(arg: Int, arg2: Int): Str     substring selection
+	//       
+	Class_ Str_class =
 	class_(Str, 
-	       Object,
-	       append_Features(
-			       append_Features(
-					       append_Features(
-							       append_Features(
-									       single_Features(attr(val, Int, no_expr())),
-									       single_Features(attr(str_field, prim_slot, no_expr()))),
-							       single_Features(method(length, nil_Formals(), Int, no_expr()))),
-					       single_Features(method(concat, 
-								      single_Formals(formal(arg, Str)),
-								      Str, 
-								      no_expr()))),
-			       single_Features(method(substr, 
-						      append_Formals(single_Formals(formal(arg, Int)), 
-								     single_Formals(formal(arg2, Int))),
-						      Str, 
-						      no_expr()))),
-	       filename);
+		   Object,
+		   append_Features(
+				   append_Features(
+						   append_Features(
+								   append_Features(
+										   single_Features(attr(val, Int, no_expr())),
+										   single_Features(attr(str_field, prim_slot, no_expr()))),
+								   single_Features(method(length, nil_Formals(), Int, no_expr()))),
+						   single_Features(method(concat, 
+									  single_Formals(formal(arg, Str)),
+									  Str, 
+									  no_expr()))),
+				   single_Features(method(substr, 
+							  append_Formals(single_Formals(formal(arg, Int)), 
+									 single_Formals(formal(arg2, Int))),
+							  Str, 
+							  no_expr()))),
+		   filename);
 
-    // Add premitive classes.
-    inher_map_.insert(std::pair<Symbol, Class_>(Object, Object_class));
-    inher_map_.insert(std::pair<Symbol, Class_>(IO, IO_class));
-    inher_map_.insert(std::pair<Symbol, Class_>(Int, Int_class));
-    inher_map_.insert(std::pair<Symbol, Class_>(Bool, Bool_class));
-    inher_map_.insert(std::pair<Symbol, Class_>(Str, Str_class));
+	// Add premitive classes.
+	inher_map_.insert(std::pair<Symbol, Class_>(Object, Object_class));
+	inher_map_.insert(std::pair<Symbol, Class_>(IO, IO_class));
+	inher_map_.insert(std::pair<Symbol, Class_>(Int, Int_class));
+	inher_map_.insert(std::pair<Symbol, Class_>(Bool, Bool_class));
+	inher_map_.insert(std::pair<Symbol, Class_>(Str, Str_class));
 }
 
-std::string getMethodSignature(Method m){
-	std::string signature;
-	// Add method name.
-	signature.append(m->getName()->get_string());
-	
-	// Add formals.
-	signature.append("(");
-	Formals f = m->getFormals();
-	for (int i=0; i<f->len(); i++){
-		signature.append(f->nth(i)->getType()->get_string());
-		if (i != f->len() - 1){
-			signature.append(", ");
-		}
-	}
-	signature.append("): ");
-
-	// Add return type.
-	signature.append(m->getType()->get_string());
-	signature.append(";");
-	return signature;
-}
 void ClassTable::collectFeatures(const Class_ c){
 
 	// We always check parent first if it's not checked. 
@@ -360,17 +339,17 @@ void ClassTable::collectFeatures(const Class_ c){
 		if (f->isAttribute()){ 
 			Attribute a  = (Attribute) f;
 			if (hasKeyInMap(a->getName(), attr_map_[c->getParent()])){
-				semant_error(c->getFilename(), f) 
+				semant_error(c->get_filename(), f) 
 					<< "Class " << c->getName()
 					<< " has attribute: " << a->getName()
 					<< " which has already been defined in it's parent class."
 				;
 			} else if (hasKeyInMap(a->getName(), attr_map_[c->getName()])) {
-				semant_error(c->getFilename(), f) 
+				semant_error(c->get_filename(), f) 
 					<< "Class " << c->getName()
 					<< " has attribute: " << a->getName()
 					<< " which duplicats with the one defined in "
-					<< c->getFilename() << ":" << a->get_line_number()
+					<< c->get_filename() << ":" << a->get_line_number()
 				;			
 			} else {
 				attr_map_[c->getName()]
@@ -397,25 +376,26 @@ void ClassTable::collectFeatures(const Class_ c){
 				// Or we have to check if all formals are the same.
 				} else {
 					for (int j = 0; j < m_formals->len(); j++){
-						if (m_formals->nth(j)->getType() != parent_formals->nth(j)->getType()){
+						if (m_formals->nth(j)->getType() 
+						  != parent_formals->nth(j)->getType()){
 							legal_inhertance = false;		
 							break;			
 						}
 					}
 				}
 				if (!legal_inhertance){
-					semant_error(c->getFilename(), f) 
-						<< "Method " << c->getName() << "." << getMethodSignature(m)
+					semant_error(c->get_filename(), f) 
+						<< "Method " << c->getName() << "." << m->getMethodSignature()
 						<< " disagrees with it's parents' method: "
-						<< c->getParent() << "." << getMethodSignature(parent_method) 
+						<< c->getParent() << "." << parent_method->getMethodSignature() 
 						<< "\n"
 					;
 				}
 
 			// In itself's method table, this is a duplicated method.
 			} else if (hasKeyInMap(m->getName(), method_map_[c->getName()]))  {
-				semant_error(c->getFilename(), f)
-					<< "Method " << c->getName() << "." << getMethodSignature(m)
+				semant_error(c->get_filename(), f)
+					<< "Method " << c->getName() << "." << m->getMethodSignature()
 					<< " has been defined in line " 
 					<< method_map_[c->getName()][f->getName()]->get_line_number()
 					<< ". We will ignore this definition\n";
@@ -467,7 +447,7 @@ const bool ClassTable::isMethodSignTypeValid(const Class_ c, const Method m){
 	}
 	if (!is_sign_correct){
 		semant_error(c->get_filename(), m)
-			<< "Method " << c->getName() << "." << getMethodSignature(m)
+			<< "Method " << c->getName() << "." << m->getMethodSignature()
 			<< " got undefined type: " << undefined_type.str() << "\n";
 	}
 	return is_sign_correct;
@@ -513,17 +493,25 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 
 		// Each expression will be assigned a type inside getExpressionType().
 		tbl.enterscope();
-		Symbol returned_type = getExpressionType(c, m->getExpr(), tbl);
+		getExpressionType(c, m->getExpr(), tbl);
 		tbl.exitscope();
 
+		Symbol returned_type = m->getExpr()->get_type();
+
+		// This should not happen.
+		if (returned_type == NULL){	continue; }
+
 		Symbol expr_cast = (returned_type == SELF_TYPE) ? c->getName() : returned_type;
-		if ((returned_type == NULL) || 
-		  m->getType() != SELF_TYPE && !le(expr_cast, m->getType()) ||
-		  m->getType() == SELF_TYPE && returned_type != SELF_TYPE){
+		// No such returned type
+		if (!hasKeyInMap(expr_cast, inher_map_) || 
+		// returned type not le than defined type
+		  ((m->getType() != SELF_TYPE && !le(expr_cast, m->getType())) ||
+		// returned type is not SELF_TYPE when it should be.
+		  (m->getType() == SELF_TYPE && returned_type != SELF_TYPE))){
 			semant_error(c->get_filename(), m)
-				<< "Method " << c->getName() << "." << getMethodSignature(m)
+				<< "Method " << c->getName() << "." << m->getMethodSignature()
 				<< " expected return type: " << m->getType() << ", "
-				<< "got return type: " << returned_type << "." << std::endl;
+				<< "got return type: " << returned_type << ".\n";
 			;
 		}
 	}
@@ -554,87 +542,87 @@ void ClassTable::checkEachClassType(){
  */
 bool ClassTable::checkExpressionType(const Symbol type_defined_in,
 									 const Symbol type_infer_in,
-                                     const SymbolTable<Symbol, Symbol>& scope_table,
+									 const SymbolTable<Symbol, Symbol>& scope_table,
 									 const Symbol class_name) {
 	Symbol type_defined = type_defined_in;
-    Symbol type_infer = type_infer_in;
+	Symbol type_infer = type_infer_in;
 
-    // if both are SELF_TYPE
+	// if both are SELF_TYPE
 	if (type_defined == SELF_TYPE){
 		return type_infer == SELF_TYPE;
 	}
 
-    // if one is SELF_TYPE
+	// if one is SELF_TYPE
 	if (type_infer == SELF_TYPE){
-        type_infer = class_name;
-    }
+		type_infer = class_name;
+	}
 
 	// call le for type checking
 	// type_infer <= type_defined
-    return le(type_infer, type_defined);
+	return le(type_infer, type_defined);
 }
 
 Symbol ClassTable::getExpressionType(
   Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
 
-    // If the input expression is NULL (expression does not exist)
-    if (expr_in == NULL){
-        return NULL;
-    }
+	// If the input expression is NULL (expression does not exist)
+	if (expr_in == NULL){
+		return NULL;
+	}
 
 
-    // early return
-    if (expr_in->get_type() != NULL){
-        return expr_in->get_type();
-    }
+	// early return
+	if (expr_in->get_type() != NULL){
+		return expr_in->get_type();
+	}
 
-    // infer type and perform type checking when (expr_in->get_type != NULL)
+	// infer type and perform type checking when (expr_in->get_type != NULL)
 
-    // if expression type is no_expr, return NULL(no_expr)
-    if (typeid(*expr_in) == typeid(no_expr_class)){
-        expr_in->set_type(No_type);
-        return No_type;
-    }
+	// if expression type is no_expr, return NULL(no_expr)
+	if (typeid(*expr_in) == typeid(no_expr_class)){
+		expr_in->set_type(No_type);
+		return No_type;
+	}
 
-    // deal with all consts
+	// deal with all consts
 	// only infer type, no type checking is performed here
-    // infer type for int_const
-    if (typeid(*expr_in) == typeid(int_const_class)){
-        expr_in->set_type(Int);
-        return expr_in->get_type();
-    }
-    else if (typeid(*expr_in) == typeid(object_class)){
-        expr_in->set_type(Object);
-        return expr_in->get_type();
-    }
-    else if (typeid(*expr_in) == typeid(bool_const_class)){
-        expr_in->set_type(Bool);
-        return expr_in->get_type();
-    }
-    else if (typeid(*expr_in) == typeid(string_const_class)){
-        expr_in->set_type(Str);
-        return expr_in->get_type();
-    }
+	// infer type for int_const
+	if (typeid(*expr_in) == typeid(int_const_class)){
+		expr_in->set_type(Int);
+		return expr_in->get_type();
+	}
+	else if (typeid(*expr_in) == typeid(object_class)){
+		expr_in->set_type(Object);
+		return expr_in->get_type();
+	}
+	else if (typeid(*expr_in) == typeid(bool_const_class)){
+		expr_in->set_type(Bool);
+		return expr_in->get_type();
+	}
+	else if (typeid(*expr_in) == typeid(string_const_class)){
+		expr_in->set_type(Str);
+		return expr_in->get_type();
+	}
 
-    // new_class
-    if (typeid(*expr_in) == typeid(new__class)){
-        new__class * expr_new = (new__class *) expr_in;
-        Symbol type_name = expr_new->get_type_name();
-        // TODO: check id type_name defined or not
-        expr_new->set_type(type_name);
-        return expr_new->get_type();
-    }
+	// new_class
+	if (typeid(*expr_in) == typeid(new__class)){
+		new__class * expr_new = (new__class *) expr_in;
+		Symbol type_name = expr_new->get_type_name();
+		// TODO: check id type_name defined or not
+		expr_new->set_type(type_name);
+		return expr_new->get_type();
+	}
 	// isvoid
 	if (typeid(*expr_in) == typeid(isvoid_class)){
-    	isvoid_class * expr_isvoid = (isvoid_class *) expr_in;
-    	if (getExpressionType(c,expr_isvoid->get_expr(),scope_table) == NULL){
-    		// TODO
-    		semant_error(c) << "ISVOID Expr failed" << std::endl;
-    		return NULL;
-    	}
-    	expr_in->set_type(Bool);
-    	return expr_isvoid->get_type();
-    }
+		isvoid_class * expr_isvoid = (isvoid_class *) expr_in;
+		if (getExpressionType(c,expr_isvoid->get_expr(),scope_table) == NULL){
+			// TODO
+			semant_error(c) << "ISVOID Expr failed" << std::endl;
+			return NULL;
+		}
+		expr_in->set_type(Bool);
+		return expr_isvoid->get_type();
+	}
 
 
 	// check expression type and infer type
@@ -646,15 +634,15 @@ Symbol ClassTable::getExpressionType(
 		if (type_infer == NULL)       return NULL;
 
 		// type checking
-        // std::cout << "type_inferred: " << type_infer << std::endl;
-        Symbol type_defined = *scope_table.lookup(expr_assign->get_name());
+		// std::cout << "type_inferred: " << type_infer << std::endl;
+		Symbol type_defined = *scope_table.lookup(expr_assign->get_name());
 		// std::cout << "type_defined: " << type_defined  << std::endl;
 		if (!checkExpressionType(type_defined,type_infer,scope_table,c->getName())){
 			semant_type_error(c,expr_in,type_infer,type_defined,expr_assign->get_name());
 			return type_infer;
 		}
 
-        expr_assign->set_type(type_infer);
+		expr_assign->set_type(type_infer);
 		return expr_assign->get_type();
 	}
 
@@ -670,20 +658,20 @@ Symbol ClassTable::getExpressionType(
 		Symbol type_then = getExpressionType(c,expr_cond->get_then_exp(),scope_table);
 		Symbol type_else = getExpressionType(c,expr_cond->get_else_exp(), scope_table);
 
-        if ((getExpressionType(c,expr_cond->get_then_exp(),scope_table) == NULL)||
-                (getExpressionType(c,expr_cond->get_else_exp(),scope_table) == NULL)){
-            // TODO
-            semant_error(c) << "Cond::body is invalid" << std::endl;
-            return NULL;
-        }
+		if ((getExpressionType(c,expr_cond->get_then_exp(),scope_table) == NULL)||
+				(getExpressionType(c,expr_cond->get_else_exp(),scope_table) == NULL)){
+			// TODO
+			semant_error(c) << "Cond::body is invalid" << std::endl;
+			return NULL;
+		}
 
 		Symbol type_lup = getSharedParent(type_then,type_else);
 		expr_cond->set_type(type_lup);
 		return expr_cond->get_type();
-    }
+	}
 
-    // loop
-    if (typeid(*expr_in) == typeid(loop_class)){
+	// loop
+	if (typeid(*expr_in) == typeid(loop_class)){
 		loop_class * expr_loop = (loop_class *) expr_in;
 		if (getExpressionType(c,expr_loop->get_pred(),scope_table) != Bool){
 			// TODO
@@ -692,45 +680,45 @@ Symbol ClassTable::getExpressionType(
 		}
 
 		if (getExpressionType(c,expr_loop->get_body(),scope_table) == NULL){
-		    // TODO
-            semant_error(c) << "loop::body is invalid" << std::endl;
-            return NULL;
+			// TODO
+			semant_error(c) << "loop::body is invalid" << std::endl;
+			return NULL;
 		}
 
 		expr_in->set_type(Object);
 		return expr_in->get_type();
-    }
+	}
 
-    // block
-    if (typeid(*expr_in) == typeid(block_class)){
-        block_class * expr_block = (block_class *) expr_in;
-        Expressions expr_body = expr_block->get_body();
-        // get the Symbol of last body as the Symbol for this block
-        // perform type checking along the way
-        Symbol last_symbol;
-        for (int i = 0; i < expr_body->len(); i++){
-            Expression expr_tmp = expr_body->nth(i);
-            last_symbol = getExpressionType(c, expr_tmp, scope_table);
-            if (last_symbol == NULL){
-                // TODO
-                semant_error(c) << "block:body is invalid" << std::endl;
-                return NULL;
-            }
-        }
-        expr_block->set_type(last_symbol);
-        return expr_block->get_type();
-    }
-    // not
-    if (typeid(*expr_in) == typeid(comp_class)){
-    	comp_class * expr_comp = (comp_class *) expr_in;
-    	if (getExpressionType(c,expr_comp->get_expr(),scope_table) != Bool){
+	// block
+	if (typeid(*expr_in) == typeid(block_class)){
+		block_class * expr_block = (block_class *) expr_in;
+		Expressions expr_body = expr_block->get_body();
+		// get the Symbol of last body as the Symbol for this block
+		// perform type checking along the way
+		Symbol last_symbol;
+		for (int i = 0; i < expr_body->len(); i++){
+			Expression expr_tmp = expr_body->nth(i);
+			last_symbol = getExpressionType(c, expr_tmp, scope_table);
+			if (last_symbol == NULL){
+				// TODO
+				semant_error(c) << "block:body is invalid" << std::endl;
+				return NULL;
+			}
+		}
+		expr_block->set_type(last_symbol);
+		return expr_block->get_type();
+	}
+	// not
+	if (typeid(*expr_in) == typeid(comp_class)){
+		comp_class * expr_comp = (comp_class *) expr_in;
+		if (getExpressionType(c,expr_comp->get_expr(),scope_table) != Bool){
 			// TODO
 			semant_error(c) << "comp:expr is invalid" << std::endl;
 			return NULL;
-    	}
-    	expr_comp->set_type(Bool);
-    	return expr_comp->get_type();
-    }
+		}
+		expr_comp->set_type(Bool);
+		return expr_comp->get_type();
+	}
 	// neg
 	if (typeid(*expr_in) == typeid(neg_class)){
 		neg_class * expr_neg = (neg_class *) expr_in;
@@ -742,16 +730,16 @@ Symbol ClassTable::getExpressionType(
 		expr_neg->set_type(Bool);
 		return expr_neg->get_type();
 	}
-    // less than
+	// less than
 	if (typeid(*expr_in) == typeid(lt_class)){
-    	lt_class * expr_lt = (lt_class *) expr_in;
+		lt_class * expr_lt = (lt_class *) expr_in;
 
-    	Symbol type_1 = getExpressionType(c,expr_lt->get_e1(),scope_table);
-    	if (type_1 != Int){
+		Symbol type_1 = getExpressionType(c,expr_lt->get_e1(),scope_table);
+		if (type_1 != Int){
 			// TODO
 			semant_error(c) << "comp<lt>:expr is invalid" << std::endl;
 			return NULL;
-    	}
+		}
 
 		Symbol type_2 = getExpressionType(c,expr_lt->get_e2(),scope_table);
 		if (type_2 != Int){
@@ -762,7 +750,7 @@ Symbol ClassTable::getExpressionType(
 
 		expr_lt->set_type(Bool);
 		return expr_lt->get_type();
-    }
+	}
 	// less than equal
 	if (typeid(*expr_in) == typeid(leq_class)){
 		leq_class * expr_leq = (leq_class *) expr_in;
@@ -787,7 +775,7 @@ Symbol ClassTable::getExpressionType(
 
 
 	// raise error if still no match
-    throw 6;
+	throw 6;
 
 }
 
@@ -852,60 +840,60 @@ ostream& ClassTable::semant_type_error(Class_  c, tree_node *expr_in , Symbol ty
 
 ostream& ClassTable::semant_error(Class_ c)
 {                                                             
-    return semant_error(c->get_filename(),c);
+	return semant_error(c->get_filename(),c);
 }    
 
 ostream& ClassTable::semant_error(Symbol filename, tree_node *t)
 {
-    error_stream << filename << ":" << t->get_line_number() << ": ";
-    return semant_error();
+	error_stream << filename << ":" << t->get_line_number() << ": ";
+	return semant_error();
 }
 
 ostream& ClassTable::semant_error()                  
 {                                                 
-    semant_errors++;                            
-    return error_stream;
+	semant_errors++;                            
+	return error_stream;
 } 
 
 
 
 /*   This is the entry point to the semantic checker.
 
-     Your checker should do the following two things:
+	 Your checker should do the following two things:
 
-     1) Check that the program is semantically correct
-     2) Decorate the abstract syntax tree with type information
-        by setting the `type' field in each Expression node.
-        (see `tree.h')
+	 1) Check that the program is semantically correct
+	 2) Decorate the abstract syntax tree with type information
+		by setting the `type' field in each Expression node.
+		(see `tree.h')
 
-     You are free to first do 1), make sure you catch all semantic
-     errors. Part 2) can be done in a second stage, when you want
-     to build mycoolc.
+	 You are free to first do 1), make sure you catch all semantic
+	 errors. Part 2) can be done in a second stage, when you want
+	 to build mycoolc.
  */
+# define IF_ERROR_THEN_DELETE_TABLE_AND_EXIT \
+	if (classtable->errors()) { \
+		cerr << "Compilation halted due to static semantic errors." << endl; \
+		delete classtable; \
+		exit(1); \
+	}
+
 void program_class::semant() {
-    initialize_constants();
+	initialize_constants();
 
-    /* ClassTable constructor may do some semantic analysis */
-    ClassTable *classtable = new ClassTable(classes);
-    // Error encountered when constructing class table. 
-    // Inhertance relation is not clear. Abort.
-    if (classtable->errors()) {
-        cerr << "Compilation halted due to static semantic errors." << endl;
-        delete classtable;
-        exit(1);
-    }
+	/* ClassTable constructor may do some semantic analysis */
+	ClassTable *classtable = new ClassTable(classes);
+	// Error encountered when constructing class table. 
+	// Inhertance relation is not clear. Abort.
+	IF_ERROR_THEN_DELETE_TABLE_AND_EXIT
 
-    /* Check for method inhertance correctness. */
-    classtable->checkFeatureInheritance();
-    if (classtable->errors()) {
-        cerr << "Compilation halted due to static semantic errors." << endl;
-        delete classtable;
-        exit(1);
-    }
+	/* Check for method inhertance correctness. */
+	classtable->checkFeatureInheritance();
+	IF_ERROR_THEN_DELETE_TABLE_AND_EXIT
 
-    classtable->checkEachClassType();
+	classtable->checkEachClassType();
+	IF_ERROR_THEN_DELETE_TABLE_AND_EXIT
 
-    // Memory SAFETY!!
-    delete classtable;
+	// Memory SAFETY!!
+	delete classtable;
 }
 
