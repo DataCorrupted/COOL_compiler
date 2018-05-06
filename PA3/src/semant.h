@@ -51,15 +51,21 @@ public:
                            const Symbol class_name);
 
   // return NULL on type_check failure / NULL is passed as expr_in
-  void getExpressionType(Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
+  void getExpressionType(const Class_ c, const Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
   
+  // Check static and dynamic dispatch at the same time, as they are ultimately the same thing.
   template <class Dispatch>
-  void assignDispatchType(const Class_ c, Expression e, SymbolTable<Symbol, Symbol>& tbl);
-  template <class Compare>
-  void assignCompareType(const Class_, Expression, SymbolTable<Symbol, Symbol>&);
-  template <class Arithmetic>
-  void assignArithmeticType(const Class_, Expression, SymbolTable<Symbol, Symbol>&);
+  void assignDispatchType(const Class_, const Expression, SymbolTable<Symbol, Symbol>&);
 
+  // Check <, <= and =.
+  template <class Compare>
+  void assignCompareType(const Class_, const Expression, SymbolTable<Symbol, Symbol>&);
+
+  // Check +, -, *, /
+  template <class Arithmetic>
+  void assignArithmeticType(const Class_, const Expression, SymbolTable<Symbol, Symbol>&);
+
+  // Check if two type satisfy a <= b;  
   const bool le(Symbol, const Symbol) const;
   const Symbol getSharedParent(const Symbol, const Symbol) const;
   const std::deque<Symbol> getInherVec(Symbol) const;

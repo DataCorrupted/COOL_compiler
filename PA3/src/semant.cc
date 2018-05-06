@@ -568,7 +568,7 @@ bool ClassTable::checkExpressionType(const Symbol type_defined_in,
 }
 
 void ClassTable::getExpressionType(
-  Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
+  const Class_ c, const Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
 
 	// If the input expression is NULL (expression does not exist)
 	assert(expr_in != NULL);
@@ -614,8 +614,10 @@ void ClassTable::getExpressionType(
 		Symbol type_name = expr_new->get_type_name();
 
 		if (type_name != SELF_TYPE && !hasKeyInMap(type_name,inher_map_)){
-			semant_error(c->get_filename(),expr_in) << "'new' used with undefined class "
-													   << type_name <<"." << std::endl;
+			semant_error(c->get_filename(),expr_in) 
+				<< "'new' used with undefined class "
+				<< type_name << ".\n" 
+			;
 		}
 		expr_new->set_type(type_name);
 	}
@@ -763,7 +765,7 @@ void ClassTable::getExpressionType(
 
 template <class Dispatch>
 void ClassTable::assignDispatchType(
-  const Class_ c, Expression e, SymbolTable<Symbol, Symbol>& tbl){
+  const Class_ c, const Expression e, SymbolTable<Symbol, Symbol>& tbl){
   	
   	Dispatch d = dynamic_cast<Dispatch>(e);
 
@@ -841,7 +843,7 @@ void ClassTable::assignDispatchType(
 
 template <class Compare>
 void ClassTable::assignCompareType(
-  const Class_ c, Expression e, SymbolTable<Symbol, Symbol>& tbl){
+  const Class_ c, const Expression e, SymbolTable<Symbol, Symbol>& tbl){
 	Compare a = dynamic_cast<Compare>(e);
 	getExpressionType(c, a->getExprOne(), tbl);
 	getExpressionType(c, a->getExprTwo(), tbl);
@@ -881,7 +883,7 @@ void ClassTable::assignCompareType(
 
 template <class Arithmetic>
 void ClassTable::assignArithmeticType(
-  const Class_ c, Expression e, SymbolTable<Symbol, Symbol>& tbl){
+  const Class_ c, const Expression e, SymbolTable<Symbol, Symbol>& tbl){
 	Arithmetic a = dynamic_cast<Arithmetic>(e);
 
 	getExpressionType(c, a->getExprOne(), tbl);
@@ -901,6 +903,11 @@ void ClassTable::assignArithmeticType(
 }
 
 const bool ClassTable::le(Symbol a, const Symbol b) const {
+	// One of the class is missing.
+	if (!hasKeyInMap(a, inher_map_) || !hasKeyInMap(b, inher_map_)){
+		return false;
+	}
+
 	// Everyone is le Object.
 	if (b == Object) { return true; }
 	// Find a's parent until it gets to b.
