@@ -90,9 +90,9 @@ static void initialize_constants(void)
 
 
 template <class K, class V>
-std::map<K, bool> ClassTable::initCheckMap(std::map<K, V>& tmpl_map){
+std::map<K, bool> ClassTable::initCheckMap(const std::map<K, V>& tmpl_map) const{
     std::map<K, bool> checked;
-    for(typename std::map<K, V>::iterator iter = tmpl_map.begin(); 
+    for(typename std::map<K, V>::const_iterator iter = tmpl_map.begin(); 
       iter != tmpl_map.end(); 
       ++iter){
         checked.insert(std::pair<K, bool>(iter->first, false));
@@ -101,7 +101,7 @@ std::map<K, bool> ClassTable::initCheckMap(std::map<K, V>& tmpl_map){
 }
 
 template <class K, class V>
-bool ClassTable::hasKeyInMap(K key, std::map<K, V>& map_){
+const bool ClassTable::hasKeyInMap(const K key, const std::map<K, V>& map_) const{
 	return map_.find(key) != map_.end();
 }
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
@@ -330,7 +330,7 @@ std::string getMethodSignature(Method m){
 	signature.append(";");
 	return signature;
 }
-void ClassTable::collectFeatures(Class_ c){
+void ClassTable::collectFeatures(const Class_ c){
 
 	// We always check parent first if it's not checked. 
 	// We don't have worry about circular dependency,
@@ -446,7 +446,7 @@ void ClassTable::checkFeatureInheritance(){
 	}
 }
 
-bool ClassTable::isMethodSignTypeValid(Class_ c, Method m){
+const bool ClassTable::isMethodSignTypeValid(const Class_ c, const Method m){
 	bool is_sign_correct = true;
 	std::stringstream undefined_type;
 	// Method can be SELF_TYPE
@@ -471,7 +471,7 @@ bool ClassTable::isMethodSignTypeValid(Class_ c, Method m){
 	}
 	return is_sign_correct;
 }
-void ClassTable::checkMethodsReturnType(Class_ c){
+void ClassTable::checkMethodsReturnType(const Class_ c){
 	// It's not necessary anymore whether father or son goes first.
 	// But we still did it anyway.
 	if (c->getName() != Object && !checked_[c->getParent()]){
@@ -511,11 +511,12 @@ void ClassTable::checkMethodsReturnType(Class_ c){
 
 		// Each expression will be assigned a type inside getExpressionType().
 		tbl.enterscope();
-		//std::cerr << c->getName() << "." << getMethodSignature(m) << std::endl;
 		Symbol returned_type = getExpressionType(c, m->getExpr(), tbl);
-		//std::cerr << c->getName() << "." << getMethodSignature(m) << std::endl;
 		tbl.exitscope();
-		if ( ( returned_type != NULL ) && !le(returned_type, m->getType()) ){
+
+		if ( ( returned_type != NULL ) && 
+		  (m->getType() != SELF_TYPE && !le(returned_type, m->getType()) 
+		  || m->getType() == SELF_TYPE && !le(returned_type, c->getName()))){
 			semant_error(c->get_filename(), m)
 				<< "Method " << c->getName() << "." << getMethodSignature(m)
 				<< " expected return type: " << m->getType() << ", "
@@ -786,33 +787,36 @@ Symbol ClassTable::getExpressionType(
 }
 
 
-bool ClassTable::le(Symbol a, Symbol b){
+const bool ClassTable::le(Symbol a, Symbol b) const {
 	// Everyone is le Object.
 	if (b == Object) { return true; }
 	// Find a's parent until it gets to b.
 	// Or a ends up in Object.
 	while (a != b && a != Object){
-		a = inher_map_[a]->getParent();
+		a = inher_map_.find(a)->second->getParent();
 	}
 	return a == b;
 }
 
-Symbol ClassTable::getSharedParent(Symbol a, Symbol b){
+const Symbol ClassTable::getSharedParent(const Symbol a, const Symbol b) const {
 	std::deque<Symbol> a_path = getInherVec(a);
 	std::deque<Symbol> b_path = getInherVec(b);
 
 	unsigned int i = 0;
-	while (i+1 < a_path.size()-1 && i+1 < b_path.size()-1 && a_path[i+1] == b_path[i+1]){
+	while (
+	  i+1 < a_path.size()-1 && 
+	  i+1 < b_path.size()-1 && 
+	  a_path[i+1] == b_path[i+1]){
 		i++;
 	}
 	return a_path[i];
 }
 
-std::deque<Symbol> ClassTable::getInherVec(Symbol curr){
+const std::deque<Symbol> ClassTable::getInherVec(Symbol curr) const {
 	std::deque<Symbol> inher_vec;
 	inher_vec.push_front(curr);
 	while (curr != Object){
-		curr = inher_map_[curr]->getParent();
+		curr = inher_map_.find(curr)->second->getParent();
 		inher_vec.push_front(curr);
 	}
 	return inher_vec;

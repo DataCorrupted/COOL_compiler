@@ -39,11 +39,10 @@ private:
 public:
   ClassTable(Classes);
   void checkFeatureInheritance();
-    void collectFeatures(Class_);
+    void collectFeatures(const Class_);
   void checkEachClassType();
-    void checkMethodsReturnType(Class_);
-    bool isMethodSignTypeValid(Class_, Method);
-  void checkMethodInheritance();
+    void checkMethodsReturnType(const Class_);
+    const bool isMethodSignTypeValid(const Class_, const Method);
 
   // return NULL on type_check failure / NULL is passed as expr_in
   Symbol getExpressionType(Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
@@ -54,11 +53,9 @@ public:
                            const SymbolTable<Symbol, Symbol>& scope_table,
                            const Symbol class_name);
 
-  void collectMethods(Class_);
-
-  bool le(Symbol, Symbol);
-  Symbol getSharedParent(Symbol, Symbol);
-  std::deque<Symbol> getInherVec(Symbol);
+  const bool le(Symbol, Symbol) const;
+  const Symbol getSharedParent(const Symbol, const Symbol) const;
+  const std::deque<Symbol> getInherVec(Symbol) const;
 
   int errors() { return semant_errors; }
   ostream& semant_error();
@@ -69,13 +66,10 @@ public:
   ostream& semant_type_error(Class_  c, tree_node *expr_in, Symbol type_infer, Symbol type_defined, Symbol id_name);
 
   template <class K, class V>
-  std::map<K, bool> initCheckMap(std::map<K, V>&);
+  std::map<K, bool> initCheckMap(const std::map<K, V>&) const;
 
   template <class K, class V>
-  bool hasKeyInMap(K, std::map<K, V>&);
-  std::map<Symbol, Class_>& getMap(){ return inher_map_; }
+  const bool hasKeyInMap(const K, const std::map<K, V>&) const;
 };
-
-//bool operator <= (Symbol, Symbol){ return true; };
 
 #endif
