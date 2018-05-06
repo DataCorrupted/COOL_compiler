@@ -339,6 +339,9 @@ void ClassTable::collectFeatures(const Class_ c){
 	attr_map_[c->getName()]
 		= std::map<Symbol, Symbol>(attr_map_[c->getParent()]);
 
+	// Add self as predefined.
+	attr_map_[c->getName()].insert(std::pair<Symbol, Symbol>(self, SELF_TYPE));
+
 	Features features = c->getFeatures();
 	for (int i = 0; i < features->len(); i++){
 		
@@ -794,8 +797,14 @@ void ClassTable::assignDispatchType(
 		;
 		e->set_type(Object);
 		return;
+	} else if (!le(d->getExpr()->get_type(), dispatch_type)){
+		semant_error(c->get_filename(), e)
+			<< "Expression type " << d->getExpr()->get_type()
+			<< " does not conform to declared static dispatch type " << dispatch_type << ".\n"
+		;
+		e->set_type(Object);
+		return;
 	}
-
 	/* Check parameters. */
 	Method m = method_map_[dispatch_type][d->getName()];
 	Formals formal_list = m->getFormals();
@@ -803,20 +812,20 @@ void ClassTable::assignDispatchType(
 	if (formal_list->len() != expr_list->len()){
 		semant_error(c->get_filename(), e)
 			<< "Method m called with wrong number of arguments."
-			<< "Expected " << formal_list->len() << "parameters, "
+			<< "Expected " << formal_list->len() << " parameters, "
 			<< "got " << expr_list->len() << "\n";
 		;
 	}
 	// And each parameter should have a type le method's definition.
 	int len = std::min(formal_list->len(), expr_list->len());
-	for (int i=0; i<formal_list->len(); i++){
+	for (int i=0; i<len; i++){
 		Symbol expr_type = expr_list->nth(i)->get_type();
 		Symbol form_type = formal_list->nth(i)->getType();
 		// Can't have SELF_TYPE as parameter type.
 		if (expr_type == SELF_TYPE || !le(expr_type, form_type)){
 			semant_error(c->get_filename(), e)
 				<< "In call of method " << c->getName() << "." << m->getMethodSignature()
-				<< " parameter " << i << "expected type " << form_type
+				<< " parameter " << i << " expected type " << form_type
 				<< ", got type " << expr_type << "\n";
 			;
 		}
