@@ -45,7 +45,7 @@ public:
     const bool isMethodSignTypeValid(const Class_, const Method);
 
   // return NULL on type_check failure / NULL is passed as expr_in
-  Symbol getExpressionType(Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
+  void getExpressionType(Class_ c, Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
 
   // type checking: expr_in <= type_infer
   bool checkExpressionType(const Symbol type_defined_in,
