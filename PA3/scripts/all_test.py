@@ -2,7 +2,7 @@
 
 import os
 import sys
-from compare import compare
+from cmp import compare
 
 def main():
 	os.system("./scripts/compile.sh")
@@ -14,6 +14,8 @@ def main():
 		path = "test/unit/"	
 
 	for f in os.listdir(path):
+		if not (f[-3:] == ".cl"):
+			continue
 		print(f)
 		result = compare(path + f)
 		if result == 0:

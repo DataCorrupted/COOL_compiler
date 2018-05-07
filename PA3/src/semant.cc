@@ -455,6 +455,7 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 	// Add every attribute of this class to symbol table.
 	SymbolTable<Symbol, Entry> tbl;
 	tbl.enterscope();
+	tbl.addid(self, SELF_TYPE);
 	for (std::map<Symbol, Attribute>::iterator iter = attr_map_[class_name].begin();
 	  iter != attr_map_[class_name].end();
 	  ++iter){
@@ -509,7 +510,7 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 		}
 
 		tbl.enterscope();
-
+//std::cerr << c->getName() << "." << m->getMethodSignature() << "\n";
 		// This method contains unknown type in it's signature.
 		checkMethodSignType(c, m, tbl);
 		// Each expression will be assigned a type inside getExpressionType().
@@ -606,7 +607,6 @@ void ClassTable::getExpressionType(
 
 	// If the input expression is NULL (expression does not exist)
 	assert(expr_in != NULL);
-
 	// early return
 	if (expr_in->get_type() != NULL){ return ; }
 
@@ -887,7 +887,7 @@ void ClassTable::assignDispatchType(
 		dispatch_type = d->getDispatchType();
 	// Dynamic dispatch with SELF_TYPE, using current class's type. 
 	} else if (d->getExpr()->get_type() == SELF_TYPE) {
-			dispatch_type = c->getName();
+		dispatch_type = c->getName();
 	// Dynamic dispatch using expr's type.
 	} else {
 		dispatch_type = d->getExpr()->get_type();
@@ -902,7 +902,8 @@ void ClassTable::assignDispatchType(
 		;
 		e->set_type(Object);
 		return;
-	} else if (!le(d->getExpr()->get_type(), dispatch_type)){
+	} else if ((d->getExpr()->get_type() != SELF_TYPE) 
+	  && (!le(d->getExpr()->get_type(), dispatch_type))){
 		semant_error(c->get_filename(), e)
 			<< "Expression type " << d->getExpr()->get_type()
 			<< " does not conform to declared static dispatch type " << dispatch_type << ".\n"

@@ -4,7 +4,9 @@ import os
 import sys
 
 def compare(file):
+	print("Testing your code...")
 	os.system("./tools-bin/lexer " + file + " | ./tools-bin/parser | ./semant >O1")
+	print("Generating standard output...")
 	os.system("./tools-bin/lexer " + file + " | ./tools-bin/parser | ./tools-bin/semant >O2")
 	result = os.system("cmp O1 O2")
 	return result >> 8
