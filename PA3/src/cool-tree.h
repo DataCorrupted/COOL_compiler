@@ -68,6 +68,7 @@ public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
    virtual const Symbol getType() const = 0;
+   virtual const Symbol getName() const = 0;
 
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
@@ -277,6 +278,7 @@ public:
    void dump(ostream& stream, int n);
 
    const Symbol getType() const { return type_decl; }
+   const Symbol getName() const { return name; }
 #ifdef Formal_SHARED_EXTRAS
    Formal_SHARED_EXTRAS
 #endif

@@ -333,10 +333,7 @@ void ClassTable::collectFeatures(const Class_ c){
 	method_map_[c->getName()] 
 		= std::map<Symbol, Method>(method_map_[c->getParent()]);
 	attr_map_[c->getName()]
-		= std::map<Symbol, Symbol>(attr_map_[c->getParent()]);
-
-	// Add self as predefined.
-	attr_map_[c->getName()].insert(std::pair<Symbol, Symbol>(self, SELF_TYPE));
+		= std::map<Symbol, Attribute>(attr_map_[c->getParent()]);
 
 	Features features = c->getFeatures();
 
@@ -366,28 +363,8 @@ void ClassTable::collectFeatures(const Class_ c){
 			} else {
 				attr_map_[c->getName()]
 					.insert(
-						std::pair<Symbol, Symbol>(a->getName(), a->getType())
+						std::pair<Symbol, Attribute>(a->getName(), a)
 					);
-				if ((typeid(*a->getInit()) != typeid(no_expr_class))){
-					// One scope for each attribute's init.
-					SymbolTable<Symbol, Entry> tbl;
-					tbl.enterscope();
-					getExpressionType(c, a->getInit(), tbl);
-					tbl.exitscope();
-
-					if (hasKeyInMap(a->getType(), inher_map_) && !le(a->getInit()->get_type(), a->getType())){
-						semant_error(c->get_filename(), f)
-							<< "Attribute " << c->getName() << "." << a->getName()
-							<< " expected type: " << a->getType() << ", "
-							<< "got type: " << a->getInit()->get_type() << "\n"
-						;
-					} else if (!hasKeyInMap(a->getType(), inher_map_)){
-						semant_error(c->get_filename(), f)
-							<< "Attribute " << c->getName() << "." << a->getName()
-							<< " has undefined type: " << a->getType() << ".\n"
-						;					
-					}
-				}
 			}
 		} else {
 			Method m = dynamic_cast<Method>(f);
@@ -478,10 +455,33 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 	// Add every attribute of this class to symbol table.
 	SymbolTable<Symbol, Entry> tbl;
 	tbl.enterscope();
-	for (std::map<Symbol, Symbol>::iterator iter = attr_map_[class_name].begin();
+	for (std::map<Symbol, Attribute>::iterator iter = attr_map_[class_name].begin();
 	  iter != attr_map_[class_name].end();
 	  ++iter){
-		tbl.addid(iter->first, iter->second);
+		tbl.addid(iter->first, iter->second->getType());
+	}
+
+	for (std::map<Symbol, Attribute>::iterator iter = attr_map_[class_name].begin();
+	  iter != attr_map_[class_name].end();
+	  ++iter){
+	  	Attribute a = attr_map_[class_name][iter->first];
+		// One scope for each attribute's init.
+		tbl.enterscope();
+		getExpressionType(c, a->getInit(), tbl);
+		tbl.exitscope();
+
+		if (hasKeyInMap(a->getType(), inher_map_) && !le(a->getInit()->get_type(), a->getType())){
+			semant_error(c->get_filename(), a)
+				<< "Attribute " << c->getName() << "." << a->getName()
+				<< " expected type: " << a->getType() << ", "
+				<< "got type: " << a->getInit()->get_type() << "\n"
+			;
+		} else if (!hasKeyInMap(a->getType(), inher_map_)){
+			semant_error(c->get_filename(), a)
+				<< "Attribute " << c->getName() << "." << a->getName()
+				<< " has undefined type: " << a->getType() << ".\n"
+			;					
+		}
 	}
 
 	// Errorly defined method, duplicated method need to be checked too.
@@ -501,12 +501,13 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 			continue;
 		}
 
-		// This method contains unknown type in it's signature.
-		checkMethodSignType(c, m);
-			
-		// Each expression will be assigned a type inside getExpressionType().
 		tbl.enterscope();
+
+		// This method contains unknown type in it's signature.
+		checkMethodSignType(c, m, tbl);
+		// Each expression will be assigned a type inside getExpressionType().
 		getExpressionType(c, m->getExpr(), tbl);
+		
 		tbl.exitscope();
 
 		Symbol returned_type = m->getExpr()->get_type();
@@ -532,7 +533,7 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 	checked_[class_name] = true;
 }
 
-const bool ClassTable::checkMethodSignType(const Class_ c, const Method m){
+const bool ClassTable::checkMethodSignType(const Class_ c, const Method m, SymbolTable<Symbol, Entry>& tbl){
 	bool is_sign_correct = true;
 	std::stringstream undefined_type;
 	// Method can be SELF_TYPE
@@ -544,6 +545,7 @@ const bool ClassTable::checkMethodSignType(const Class_ c, const Method m){
 	Formals f = m->getFormals();
 	for (int i=0; i<f->len(); i++){
 		Symbol type_name = f->nth(i)->getType();
+		tbl.addid(f->nth(i)->getName(), type_name);
 		if (!hasKeyInMap(type_name, inher_map_)){
 			if (!is_sign_correct) {	undefined_type << ", ";	}
 			undefined_type << m->getType();

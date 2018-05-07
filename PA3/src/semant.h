@@ -34,7 +34,7 @@ private:
 
   // method_map[class_name][method_name] = method.
   std::map<Symbol, std::map<Symbol, Method> > method_map_;
-  std::map<Symbol, std::map<Symbol, Symbol> > attr_map_;
+  std::map<Symbol, std::map<Symbol, Attribute> > attr_map_;
 
 public:
   ClassTable(Classes);
@@ -42,7 +42,7 @@ public:
     void collectFeatures(const Class_);
   void checkEachClassType();
     void checkMethodsReturnType(const Class_);
-    const bool checkMethodSignType(const Class_, const Method);
+    const bool checkMethodSignType(const Class_, const Method, SymbolTable<Symbol, Entry>&);
   void checkMainExists();
 
   // type checking: expr_in <= type_infer
