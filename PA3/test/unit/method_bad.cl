@@ -6,12 +6,15 @@ class Main inherits IO{
 
 class A{
 	a(i: Int, io: IO): SELF_TYPE{
-		new A
+		self.a(1, new D)
 	};
 
-	b(): A{
-		new A
-	};
+
+	a(i: Int, io: D): SELF_TYPE{{
+		let c: Bool <- 1 in 1;
+		self.a(1, new IO);
+	}};
+
 
 	c(i: Int, io: IO): A{
 		new SELF_TYPE

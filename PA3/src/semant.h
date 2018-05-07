@@ -42,7 +42,8 @@ public:
     void collectFeatures(const Class_);
   void checkEachClassType();
     void checkMethodsReturnType(const Class_);
-    const bool isMethodSignTypeValid(const Class_, const Method);
+    const bool checkMethodSignType(const Class_, const Method);
+  void checkMainExists();
 
   // type checking: expr_in <= type_infer
   bool checkExpressionType(const Symbol type_defined_in,

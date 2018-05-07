@@ -249,9 +249,10 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
-   const bool isAttribute() const { return true; }
-   const Symbol getName() const { return name; }
-   const Symbol getType() const { return type_decl; }
+   const bool isAttribute() const { return true; };
+   const Symbol getName() const { return name; };
+   const Symbol getType() const { return type_decl; };
+   const Expression getInit() const { return init; };
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS

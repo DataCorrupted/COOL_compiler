@@ -56,8 +56,7 @@ static Symbol
 //
 // Initializing the predefined symbols.
 //
-static void initialize_constants(void)
-{
+static void initialize_constants(void) {
 	arg         = idtable.add_string("arg");
 	arg2        = idtable.add_string("arg2");
 	Bool        = idtable.add_string("Bool");
@@ -196,9 +195,6 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 		}
 	}
 
-	if (!hasKeyInMap(Main, inher_map_)){
-		semant_error() << "Class Main not found.\n";
-	}
 }
 
 void ClassTable::install_basic_classes() {
@@ -343,27 +339,25 @@ void ClassTable::collectFeatures(const Class_ c){
 	attr_map_[c->getName()].insert(std::pair<Symbol, Symbol>(self, SELF_TYPE));
 
 	Features features = c->getFeatures();
-	for (int i = 0; i < features->len(); i++){
-		
-	  Feature f = features->nth(i);
 
-		// We don't have anything to do with attributes now.
+	for (int i = 0; i < features->len(); i++){
+
+		Feature f = features->nth(i);
+
 		// Acturally, you can use:
 		// 		(typeid(*f) != typeid(method_class))
 		// but I think that would make the code too hard to read.
-		// Also, I find out too late...
+		// Also, I found out too late...
 		if (f->isAttribute()){ 
-			Attribute a  = (Attribute) f;
+			Attribute a  = dynamic_cast<Attribute>(f);
 			if (hasKeyInMap(a->getName(), attr_map_[c->getParent()])){
 				semant_error(c->get_filename(), f) 
-					<< "Class " << c->getName()
-					<< " has attribute: " << a->getName()
+					<< "Attribute " << c->getName() << "." << a->getName()
 					<< " which has already been defined in it's parent class."
 				;
 			} else if (hasKeyInMap(a->getName(), attr_map_[c->getName()])) {
 				semant_error(c->get_filename(), f) 
-					<< "Class " << c->getName()
-					<< " has attribute: " << a->getName()
+					<< "Attribute " << c->getName() << "." << a->getName()
 					<< " which duplicats with the one defined in "
 					<< c->get_filename() << ":" << a->get_line_number()
 				;			
@@ -373,8 +367,25 @@ void ClassTable::collectFeatures(const Class_ c){
 						std::pair<Symbol, Symbol>(a->getName(), a->getType())
 					);
 			}
+			if ((typeid(*a->getInit()) != typeid(no_expr_class))){
+				// One scope for each attribute's init.
+				SymbolTable<Symbol, Symbol> tbl;
+				tbl.enterscope();
+				getExpressionType(c, a->getInit(), tbl);
+				tbl.exitscope();
+
+				std::cerr << (a->getInit()->get_type() == NULL) << "\n";
+				if (!le(a->getInit()->get_type(), a->getType())){
+					semant_error(c->get_filename(), f)
+						<< "Attribute " << c->getName() << "." << a->getName()
+						<< " expected type: " << a->getType() << ", "
+						<< "got type: " << a->getInit()->get_type() << "\n"
+					;
+				}
+			}
+
 		} else {
-			Method m = (Method) f;
+			Method m = dynamic_cast<Method>(f);
 
 			// In it's parent's method table, this is a inherited method.
 			if (hasKeyInMap(m->getName(), method_map_[c->getParent()])) {
@@ -466,6 +477,7 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 		tbl.addid(iter->first, &(iter->second));
 	}
 
+	// Errorly defined method, duplicated method need to be checked too.
 	// Check for each method.
 	for (std::map<Symbol, Method>::iterator iter = method_map_[class_name].begin();
 	  iter != method_map_[class_name].end();
@@ -483,10 +495,8 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 		}
 
 		// This method contains unknown type in it's signature.
-		if (!isMethodSignTypeValid(c, m)){
-			continue;
-		}
-
+		checkMethodSignType(c, m);
+			
 		// Each expression will be assigned a type inside getExpressionType().
 		tbl.enterscope();
 		getExpressionType(c, m->getExpr(), tbl);
@@ -515,7 +525,7 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 	checked_[class_name] = true;
 }
 
-const bool ClassTable::isMethodSignTypeValid(const Class_ c, const Method m){
+const bool ClassTable::checkMethodSignType(const Class_ c, const Method m){
 	bool is_sign_correct = true;
 	std::stringstream undefined_type;
 	// Method can be SELF_TYPE
@@ -540,6 +550,13 @@ const bool ClassTable::isMethodSignTypeValid(const Class_ c, const Method m){
 	}
 	return is_sign_correct;
 }
+
+void ClassTable::checkMainExists() {
+	if (!hasKeyInMap(Main, inher_map_)){
+		semant_error() << "Class Main not found.\n";
+	}
+}
+
 
 /*
  * If type_infer <= type_defined, return true
@@ -1015,9 +1032,14 @@ void program_class::semant() {
 
 	/* Check for method inhertance correctness. */
 	classtable->checkFeatureInheritance();
-	IF_ERROR_THEN_DELETE_TABLE_AND_EXIT
 
+	/* Check that each has correct method type. */
 	classtable->checkEachClassType();
+
+	/* Check that main exists.*/
+	classtable->checkMainExists();
+
+
 	IF_ERROR_THEN_DELETE_TABLE_AND_EXIT
 
 	// Memory SAFETY!!
