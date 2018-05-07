@@ -849,7 +849,6 @@ void ClassTable::getExpressionType(
 		getExpressionType(c,expr_typecase->get_expr(),scope_table);
 
 		// get the cases (deal with all branches)
-        // TODO: what if no branch
         Cases expr_cases = expr_typecase->get_cases();
         Symbol common_parent;
         for (int i = 0; i < expr_cases->len(); i++){
@@ -861,7 +860,12 @@ void ClassTable::getExpressionType(
             Symbol id = branch_ptr->get_name();
 
             Symbol type_defined = branch_ptr->get_type_decl();
-            // TODO: what if id does not exist
+            if (!checkClassExist(type_defined)){
+                semant_error(c->get_filename(),branch_ptr) << "Class "<<type_defined
+                                                        <<" of case branch is undefined." << std::endl;
+            }
+
+            scope_table.addid(id,type_defined);
 
             Expression branch_body = branch_ptr->get_expr();
             getExpressionType(c,branch_body,scope_table);

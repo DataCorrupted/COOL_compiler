@@ -10,7 +10,7 @@ class Main{
 
 	foo(): Int {
 	    case mid of
-	    	x : Int => (x+1);
+	    	x : Int2 => (x+1);
 	    	y : Bool => (1+2);
 	    esac
 	};
