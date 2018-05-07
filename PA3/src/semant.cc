@@ -374,13 +374,17 @@ void ClassTable::collectFeatures(const Class_ c){
 				getExpressionType(c, a->getInit(), tbl);
 				tbl.exitscope();
 
-				std::cerr << (a->getInit()->get_type() == NULL) << "\n";
-				if (!le(a->getInit()->get_type(), a->getType())){
+				if (hasKeyInMap(a->getType(), inher_map_) && !le(a->getInit()->get_type(), a->getType())){
 					semant_error(c->get_filename(), f)
 						<< "Attribute " << c->getName() << "." << a->getName()
 						<< " expected type: " << a->getType() << ", "
 						<< "got type: " << a->getInit()->get_type() << "\n"
 					;
+				} else if (!hasKeyInMap(a->getType(), inher_map_)){
+					semant_error(c->get_filename(), f)
+						<< "Attribute " << c->getName() << "." << a->getName()
+						<< " has undefined type: " << a->getType() << ".\n"
+					;					
 				}
 			}
 
