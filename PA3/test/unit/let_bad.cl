@@ -16,6 +16,7 @@ class Main{
 			id <- (let x : Int <- x in (x < 12));
 			mid <- (let x : Int <- y in (x < 12));
 			mid <- (let x : Int <- y in (x + 12));
+			mid <- (let x : Int2 <- y in (x + 12));
 		}
 	};
 };

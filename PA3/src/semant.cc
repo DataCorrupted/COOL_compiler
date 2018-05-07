@@ -519,7 +519,7 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 		tbl.exitscope();
 
 		Symbol returned_type = m->getExpr()->get_type();
-std::cerr << returned_type << "\n";
+//std::cerr << returned_type << "\n";
 		// This should not happen. Or alien just attacked EARTH.
 		if (returned_type == NULL){	continue; }
 
@@ -698,8 +698,7 @@ void ClassTable::getExpressionType(
 		cond_class * expr_cond = (cond_class *) expr_in;
 		getExpressionType(c,expr_cond->get_pred(),scope_table);
 		if (expr_cond->get_pred()->get_type() != Bool){
-			// TODO
-			semant_error(c) << "Cond::pred is invalid" << std::endl;
+			semant_error(c->get_filename(),expr_in) << "Predicate of 'if' does not have type Bool." << std::endl;
 		}
 
 		getExpressionType(c,expr_cond->get_then_exp(), scope_table);
@@ -732,8 +731,7 @@ void ClassTable::getExpressionType(
 
 
 		if ( type_pred != Bool){
-			// TODO
-			semant_error(c) << "loop::pred is invalid" << std::endl;
+			semant_error(c->get_filename(),expr_in) << "Loop condition does not have type Bool." << std::endl;
 		}
 
 		expr_in->set_type(Object);
@@ -758,8 +756,8 @@ void ClassTable::getExpressionType(
 		comp_class * expr_comp = (comp_class *) expr_in;
 		getExpressionType(c,expr_comp->get_expr(),scope_table);
 		if (expr_comp->get_expr()->get_type() != Bool){
-			// TODO
-			semant_error(c) << "comp:expr is invalid" << std::endl;
+			semant_error(c->get_filename(),expr_in) << "Argument of 'not' has type "<<
+                                                    expr_comp->get_expr()->get_type() <<" instead of Bool."<< std::endl;
 		}
 		expr_comp->set_type(Bool);
 
@@ -819,16 +817,15 @@ void ClassTable::getExpressionType(
 
 		Symbol id = expr_let->get_id();
 	    Symbol type_defined = expr_let->get_type_decl();
-	    if (type_defined != SELF_TYPE && !hasKeyInMap(type_defined,inher_map_) ){
-	    	//TODO: type not defined (class not decleared)
+	    if (!checkClassExist(type_defined)){
+            semant_error(c->get_filename(),expr_in)
+                    << "Class " << type_defined << " of let-bound identifier "<<id<<" is undefined." << std::endl;
 	    }
 
 	    // deal with init (assign and creat new value)
 	    Expression init = expr_let->get_init();
 	    getExpressionType(c,init,scope_table);
 
-	    // std::cerr << "type_defined: " << type_defined << std::endl;
-	    // std::cerr << "type_inferred: " << init->get_type() << std::endl;
 
 	    if ((init->get_type() != No_type) && (!checkExpressionType(type_defined,init->get_type(),scope_table,c->getName()))){
             semant_init_type(c,expr_in,init->get_type(),type_defined,id);
