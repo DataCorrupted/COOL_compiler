@@ -620,8 +620,16 @@ void ClassTable::getExpressionType(
 	}
 	else if (typeid(*expr_in) == typeid(object_class)){
 		object_class * expr_obj = (object_class *) expr_in;
-		Symbol object_type = *scope_table.lookup(expr_obj->get_name());
-		expr_in->set_type(object_type);
+		Symbol * object_type_ptr = scope_table.lookup(expr_obj->get_name());
+		if (object_type_ptr == NULL){
+		    // if object not defined before
+            semant_error(c->get_filename(),expr_in) << "Undeclared identifier "<<expr_obj->get_name()
+                                                    <<"." << std::endl;
+		    expr_in->set_type(Object);
+		}
+		else {
+            expr_in->set_type(*object_type_ptr);
+        }
 	}
 
 	// isvoid
@@ -659,6 +667,7 @@ void ClassTable::getExpressionType(
 		// type checking
 		// std::cout << "type_inferred: " << type_infer << std::endl;
 		Symbol type_defined = *scope_table.lookup(expr_assign->get_name());
+
 		// std::cout << "type_defined: " << type_defined  << std::endl;
 		if (!checkExpressionType(type_defined,type_infer,scope_table,c->getName())){
 			semant_type_error(c,expr_in,type_infer,type_defined,expr_assign->get_name());
@@ -777,11 +786,75 @@ void ClassTable::getExpressionType(
 	} else if (typeid(*expr_in) == typeid(dispatch_class) /* dynamic dispathc */) {
 		assignDispatchType<dispatch_class*>(c, expr_in, scope_table);
 
-	} else if (true /* let */) {
-		;
-	} else if (true /* branch */) {
-		;
-	} else {
+	} else if (typeid(*expr_in) == typeid(let_class) /* let */) {
+		let_class * expr_let = (let_class *) expr_in;
+
+		scope_table.enterscope();
+
+		Symbol id = expr_let->get_id();
+	    Symbol type_defined = expr_let->get_type_decl();
+	    if (type_defined != SELF_TYPE && !hasKeyInMap(type_defined,inher_map_) ){
+	    	//TODO: type not defined (class not decleared)
+	    }
+
+	    // deal with init (assign and creat new value)
+	    Expression init = expr_let->get_init();
+	    getExpressionType(c,init,scope_table);
+	    if (init->get_type() != No_type){
+            checkExpressionType(type_defined,init->get_type(),scope_table,c->getName());
+	    }
+
+
+        scope_table.addid(id,&type_defined);
+
+	    std::cerr << "Here" << std::endl;
+
+	    // deal with expr
+		Expression expr_body = expr_let->get_body();
+		getExpressionType(c,expr_body,scope_table);
+		checkExpressionType(type_defined,expr_body->get_type(),scope_table,c->getName());
+		expr_let->set_type(expr_body->get_type());
+
+        // std::cerr << "Here2" << std::endl;
+
+	    scope_table.exitscope();
+
+
+	}
+	// case (branch)
+	else if (typeid(*expr_in) == typeid(typcase_class)){
+		typcase_class * expr_typecase = (typcase_class *) expr_in;
+		getExpressionType(c,expr_typecase->get_expr(),scope_table);
+
+		// get the cases (deal with all branches)
+        // TODO: what if no branch
+        Cases expr_cases = expr_typecase->get_cases();
+        Symbol common_parent;
+        for (int i = 0; i < expr_cases->len(); i++){
+            Case_class * case_ptr = expr_cases->nth(i);
+            branch_class * branch_ptr = (branch_class * ) case_ptr;
+
+            scope_table.enterscope();
+
+            Symbol id = branch_ptr->get_name();
+
+            Symbol type_defined = branch_ptr->get_type_decl();
+            if ((type_defined != SELF_TYPE) && (!hasKeyInMap(type_defined,inher_map_))){
+                // TODO: error for type_defined not exist
+            }
+
+            Expression branch_body = branch_ptr->get_expr();
+            getExpressionType(c,branch_body,scope_table);
+
+            // find the common parent of all exprs
+            if (i == 0)     common_parent = branch_body->get_type();
+            else            common_parent = getSharedParent(common_parent,branch_body->get_type());
+
+            scope_table.exitscope();
+        }
+        expr_typecase->set_type(common_parent);
+	}
+	else {
 		// raise error if still no match
 		throw 6;
 	}
