@@ -370,7 +370,7 @@ void ClassTable::collectFeatures(const Class_ c){
 					);
 				if ((typeid(*a->getInit()) != typeid(no_expr_class))){
 					// One scope for each attribute's init.
-					SymbolTable<Symbol, Symbol> tbl;
+					SymbolTable<Symbol, Entry> tbl;
 					tbl.enterscope();
 					getExpressionType(c, a->getInit(), tbl);
 					tbl.exitscope();
@@ -476,12 +476,12 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 	}
 
 	// Add every attribute of this class to symbol table.
-	SymbolTable<Symbol, Symbol> tbl;
+	SymbolTable<Symbol, Entry> tbl;
 	tbl.enterscope();
 	for (std::map<Symbol, Symbol>::iterator iter = attr_map_[class_name].begin();
 	  iter != attr_map_[class_name].end();
 	  ++iter){
-		tbl.addid(iter->first, &(iter->second));
+		tbl.addid(iter->first, iter->second);
 	}
 
 	// Errorly defined method, duplicated method need to be checked too.
@@ -571,7 +571,7 @@ void ClassTable::checkMainExists() {
  */
 bool ClassTable::checkExpressionType(const Symbol type_defined_in,
 									 const Symbol type_infer_in,
-									 const SymbolTable<Symbol, Symbol>& scope_table,
+									 const SymbolTable<Symbol, Entry>& scope_table,
 									 const Symbol class_name) {
 	Symbol type_defined = type_defined_in;
 	Symbol type_infer = type_infer_in;
@@ -592,7 +592,7 @@ bool ClassTable::checkExpressionType(const Symbol type_defined_in,
 }
 
 void ClassTable::getExpressionType(
-  const Class_ c, const Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table){
+  const Class_ c, const Expression expr_in, SymbolTable<Symbol, Entry>& scope_table){
 
 	// If the input expression is NULL (expression does not exist)
 	assert(expr_in != NULL);
@@ -620,7 +620,7 @@ void ClassTable::getExpressionType(
 	}
 	else if (typeid(*expr_in) == typeid(object_class)){
 		object_class * expr_obj = (object_class *) expr_in;
-		Symbol * object_type_ptr = scope_table.lookup(expr_obj->get_name());
+		Symbol object_type_ptr = scope_table.lookup(expr_obj->get_name());
 		if (object_type_ptr == NULL){
 		    // if object not defined before
             semant_error(c->get_filename(),expr_in) << "Undeclared identifier "<<expr_obj->get_name()
@@ -628,7 +628,7 @@ void ClassTable::getExpressionType(
 		    expr_in->set_type(Object);
 		}
 		else {
-            expr_in->set_type(*object_type_ptr);
+            expr_in->set_type(object_type_ptr);
         }
 	}
 
@@ -666,7 +666,7 @@ void ClassTable::getExpressionType(
 
 		// type checking
 		// std::cout << "type_inferred: " << type_infer << std::endl;
-		Symbol type_defined = *scope_table.lookup(expr_assign->get_name());
+		Symbol type_defined = scope_table.lookup(expr_assign->get_name());
 
 		// std::cout << "type_defined: " << type_defined  << std::endl;
 		if (!checkExpressionType(type_defined,type_infer,scope_table,c->getName())){
@@ -685,7 +685,7 @@ void ClassTable::getExpressionType(
 			semant_error(c) << "Cond::pred is invalid" << std::endl;
 		}
 
-		getExpressionType(c,expr_cond->get_then_exp(),scope_table);
+		getExpressionType(c,expr_cond->get_then_exp(), scope_table);
 		getExpressionType(c,expr_cond->get_else_exp(), scope_table);
 		Symbol type_then = expr_cond->get_then_exp()->get_type();
 		Symbol type_else = expr_cond->get_else_exp()->get_type();
@@ -753,7 +753,7 @@ void ClassTable::getExpressionType(
 	} else if (typeid(*expr_in) == typeid(neg_class)){
 		neg_class * expr_neg = (neg_class *) expr_in;
 
-		getExpressionType(c,expr_neg->get_expr(),scope_table);
+		getExpressionType(c,expr_neg->get_expr(), scope_table);
 		Symbol type_1 = expr_neg->get_expr()->get_type();
 
 		if (type_1 != Int){
@@ -805,7 +805,7 @@ void ClassTable::getExpressionType(
 	    }
 
 
-        scope_table.addid(id,&type_defined);
+        scope_table.addid(id, type_defined);
 
 	    std::cerr << "Here" << std::endl;
 
@@ -862,7 +862,7 @@ void ClassTable::getExpressionType(
 
 template <class Dispatch>
 void ClassTable::assignDispatchType(
-  const Class_ c, const Expression e, SymbolTable<Symbol, Symbol>& tbl){
+  const Class_ c, const Expression e, SymbolTable<Symbol, Entry>& tbl){
   	
   	Dispatch d = dynamic_cast<Dispatch>(e);
 
@@ -940,7 +940,7 @@ void ClassTable::assignDispatchType(
 
 template <class Compare>
 void ClassTable::assignCompareType(
-  const Class_ c, const Expression e, SymbolTable<Symbol, Symbol>& tbl){
+  const Class_ c, const Expression e, SymbolTable<Symbol, Entry>& tbl){
 	Compare a = dynamic_cast<Compare>(e);
 	getExpressionType(c, a->getExprOne(), tbl);
 	getExpressionType(c, a->getExprTwo(), tbl);
@@ -980,7 +980,7 @@ void ClassTable::assignCompareType(
 
 template <class Arithmetic>
 void ClassTable::assignArithmeticType(
-  const Class_ c, const Expression e, SymbolTable<Symbol, Symbol>& tbl){
+  const Class_ c, const Expression e, SymbolTable<Symbol, Entry>& tbl){
 	Arithmetic a = dynamic_cast<Arithmetic>(e);
 
 	getExpressionType(c, a->getExprOne(), tbl);

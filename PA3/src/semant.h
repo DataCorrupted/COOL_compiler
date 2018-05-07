@@ -48,23 +48,23 @@ public:
   // type checking: expr_in <= type_infer
   bool checkExpressionType(const Symbol type_defined_in,
                            const Symbol type_infer_in,
-                           const SymbolTable<Symbol, Symbol>& scope_table,
+                           const SymbolTable<Symbol, Entry>& scope_table,
                            const Symbol class_name);
 
   // return NULL on type_check failure / NULL is passed as expr_in
-  void getExpressionType(const Class_ c, const Expression expr_in, SymbolTable<Symbol, Symbol>& scope_table);
+  void getExpressionType(const Class_ c, const Expression expr_in, SymbolTable<Symbol, Entry>& scope_table);
   
   // Check static and dynamic dispatch at the same time, as they are ultimately the same thing.
   template <class Dispatch>
-  void assignDispatchType(const Class_, const Expression, SymbolTable<Symbol, Symbol>&);
+  void assignDispatchType(const Class_, const Expression, SymbolTable<Symbol, Entry>&);
 
   // Check <, <= and =.
   template <class Compare>
-  void assignCompareType(const Class_, const Expression, SymbolTable<Symbol, Symbol>&);
+  void assignCompareType(const Class_, const Expression, SymbolTable<Symbol, Entry>&);
 
   // Check +, -, *, /
   template <class Arithmetic>
-  void assignArithmeticType(const Class_, const Expression, SymbolTable<Symbol, Symbol>&);
+  void assignArithmeticType(const Class_, const Expression, SymbolTable<Symbol, Entry>&);
 
   // Check if two type satisfy a <= b;  
   const bool le(Symbol, const Symbol) const;
