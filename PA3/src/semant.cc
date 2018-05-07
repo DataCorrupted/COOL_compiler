@@ -797,16 +797,40 @@ void ClassTable::getExpressionType(
 
 
 	}
+	// case (branch)
 	else if (typeid(*expr_in) == typeid(typcase_class)){
 		typcase_class * expr_typecase = (typcase_class *) expr_in;
 		getExpressionType(c,expr_typecase->get_expr(),scope_table);
-		// TODO
+
+		// get the cases (deal with all branches)
+        // TODO: what if no branch
+        Cases expr_cases = expr_typecase->get_cases();
+        Symbol common_parent;
+        for (int i = 0; i < expr_cases->len(); i++){
+            Case_class * case_ptr = expr_cases->nth(i);
+            branch_class * branch_ptr = (branch_class * ) case_ptr;
+
+            scope_table.enterscope();
+
+            Symbol id = branch_ptr->get_name();
+
+            Symbol type_defined = branch_ptr->get_type_decl();
+            if ((type_defined != SELF_TYPE) && (!hasKeyInMap(type_defined,inher_map_))){
+                // TODO: error for type_defined not exist
+            }
+
+            Expression branch_body = branch_ptr->get_expr();
+            getExpressionType(c,branch_body,scope_table);
+
+            // find the common parent of all exprs
+            if (i == 0)     common_parent = branch_body->get_type();
+            else            common_parent = getSharedParent(common_parent,branch_body->get_type());
+
+            scope_table.exitscope();
+        }
+        expr_typecase->set_type(common_parent);
 	}
-	else if (typeid(*expr_in) == typeid(branch_class) /* branch */) {
-		scope_table.enterscope();
-		// TODO
-		scope_table.exitscope();
-	} else {
+	else {
 		// raise error if still no match
 		throw 6;
 	}
