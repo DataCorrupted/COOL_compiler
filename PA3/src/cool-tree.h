@@ -68,7 +68,7 @@ public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
    virtual const Symbol getType() const = 0;
-   virtual const Symbol getName() const = 0;
+   virtual const Symbol getName() const = 0; 
 
 #ifdef Formal_EXTRAS
    Formal_EXTRAS

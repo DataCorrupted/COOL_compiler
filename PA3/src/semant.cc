@@ -464,7 +464,11 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 	for (std::map<Symbol, Attribute>::iterator iter = attr_map_[class_name].begin();
 	  iter != attr_map_[class_name].end();
 	  ++iter){
-	  	Attribute a = attr_map_[class_name][iter->first];
+		Attribute a = attr_map_[class_name][iter->first];
+		//
+		if (typeid(*a->getInit()) == typeid(no_expr_class)){
+			continue;
+		}
 		// One scope for each attribute's init.
 		tbl.enterscope();
 		getExpressionType(c, a->getInit(), tbl);
@@ -512,7 +516,7 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 
 		Symbol returned_type = m->getExpr()->get_type();
 
-		// This should not happen.
+		// This should not happen. Or alien just attacked EARTH.
 		if (returned_type == NULL){	continue; }
 
 		Symbol expr_cast = (returned_type == SELF_TYPE) ? c->getName() : returned_type;
@@ -545,6 +549,7 @@ const bool ClassTable::checkMethodSignType(const Class_ c, const Method m, Symbo
 	Formals f = m->getFormals();
 	for (int i=0; i<f->len(); i++){
 		Symbol type_name = f->nth(i)->getType();
+		// Add that name to tbl for reference.
 		tbl.addid(f->nth(i)->getName(), type_name);
 		if (!hasKeyInMap(type_name, inher_map_)){
 			if (!is_sign_correct) {	undefined_type << ", ";	}
@@ -781,11 +786,11 @@ void ClassTable::getExpressionType(
 		assignArithmeticType<divide_class*>(c, expr_in, scope_table);
 	
 	// static dispatch
-	} else if (typeid(*expr_in) == typeid(static_dispatch_class) ) {
+	} else if (typeid(*expr_in) == typeid(static_dispatch_class)) {
 		assignDispatchType<static_dispatch_class*>(c, expr_in, scope_table);
 
 	// dynamic dispatch
-	} else if (typeid(*expr_in) == typeid(dispatch_class) /* dynamic dispathc */) {
+	} else if (typeid(*expr_in) == typeid(dispatch_class)) {
 		assignDispatchType<dispatch_class*>(c, expr_in, scope_table);
 
 	} else if (typeid(*expr_in) == typeid(let_class) /* let */) {
@@ -809,15 +814,11 @@ void ClassTable::getExpressionType(
 
         scope_table.addid(id, type_defined);
 
-	    std::cerr << "Here" << std::endl;
-
 	    // deal with expr
 		Expression expr_body = expr_let->get_body();
 		getExpressionType(c,expr_body,scope_table);
 		checkExpressionType(type_defined,expr_body->get_type(),scope_table,c->getName());
 		expr_let->set_type(expr_body->get_type());
-
-        // std::cerr << "Here2" << std::endl;
 
 	    scope_table.exitscope();
 
