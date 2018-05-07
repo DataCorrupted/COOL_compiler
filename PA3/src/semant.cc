@@ -788,9 +788,7 @@ void ClassTable::getExpressionType(
 	    // deal with expr
 		Expression expr_body = expr_let->get_body();
 		getExpressionType(c,expr_body,scope_table);
-		if (!checkExpressionType(type_defined,expr_body->get_type(),scope_table,c->getName())){
-			// TODO (type mismatch)
-		}
+		checkExpressionType(type_defined,expr_body->get_type(),scope_table,c->getName());
 		expr_let->set_type(expr_body->get_type());
 
         // std::cerr << "Here2" << std::endl;
