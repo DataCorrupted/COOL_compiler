@@ -519,7 +519,7 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 		tbl.exitscope();
 
 		Symbol returned_type = m->getExpr()->get_type();
-
+std::cerr << returned_type << "\n";
 		// This should not happen. Or alien just attacked EARTH.
 		if (returned_type == NULL){	continue; }
 
@@ -704,10 +704,19 @@ void ClassTable::getExpressionType(
 
 		getExpressionType(c,expr_cond->get_then_exp(), scope_table);
 		getExpressionType(c,expr_cond->get_else_exp(), scope_table);
+
 		Symbol type_then = expr_cond->get_then_exp()->get_type();
 		Symbol type_else = expr_cond->get_else_exp()->get_type();
-
-		Symbol type_lup = getSharedParent(type_then,type_else);
+		
+		Symbol type_lup = NULL;
+		if (type_then == SELF_TYPE && type_else == SELF_TYPE){
+			type_lup = SELF_TYPE;
+		} else {
+			type_then = (type_then == SELF_TYPE)? c->getName(): type_then;
+			type_else = (type_else == SELF_TYPE)? c->getName(): type_else;
+			type_lup = getSharedParent(type_then, type_else);
+		}
+	 
 		expr_cond->set_type(type_lup);
 	}
 
@@ -859,10 +868,12 @@ void ClassTable::getExpressionType(
 
             Expression branch_body = branch_ptr->get_expr();
             getExpressionType(c,branch_body,scope_table);
+            Symbol tmp = branch_body->get_type();
+            tmp = (tmp == SELF_TYPE)? c->getName(): tmp;
 
             // find the common parent of all exprs
-            if (i == 0)     common_parent = branch_body->get_type();
-            else            common_parent = getSharedParent(common_parent,branch_body->get_type());
+            if (i == 0)     common_parent = tmp;
+            else            common_parent = getSharedParent(common_parent, tmp);
 
             scope_table.exitscope();
         }
@@ -1035,8 +1046,8 @@ const Symbol ClassTable::getSharedParent(const Symbol a, const Symbol b) const {
 
 	unsigned int i = 0;
 	while (
-	  i+1 < a_path.size()-1 && 
-	  i+1 < b_path.size()-1 && 
+	  i+1 < a_path.size() && 
+	  i+1 < b_path.size() && 
 	  a_path[i+1] == b_path[i+1]){
 		i++;
 	}
