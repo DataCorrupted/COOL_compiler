@@ -1,5 +1,6 @@
 class Main{
 	mid : Int;
+	y : Bool;
 
 	main(): Int {
 		{
@@ -14,3 +15,4 @@ class Main{
 		mid <- (let x : Int <- x in (x < 12))
 	};
 };
+

@@ -601,6 +601,12 @@ bool ClassTable::checkExpressionType(const Symbol type_defined_in,
 	return le(type_infer, type_defined);
 }
 
+bool ClassTable::checkClassExist(Symbol type_defined) {
+	return ((type_defined == SELF_TYPE) || (hasKeyInMap(type_defined,inher_map_)));
+}
+
+
+
 void ClassTable::getExpressionType(
   const Class_ c, const Expression expr_in, SymbolTable<Symbol, Entry>& scope_table){
 
@@ -810,11 +816,16 @@ void ClassTable::getExpressionType(
 	    // deal with init (assign and creat new value)
 	    Expression init = expr_let->get_init();
 	    getExpressionType(c,init,scope_table);
-	    if (init->get_type() != No_type){
-            checkExpressionType(type_defined,init->get_type(),scope_table,c->getName());
+
+	    // std::cerr << "type_defined: " << type_defined << std::endl;
+	    // std::cerr << "type_inferred: " << init->get_type() << std::endl;
+
+	    if ((init->get_type() != No_type) && (!checkExpressionType(type_defined,init->get_type(),scope_table,c->getName()))){
+            semant_init_type(c,expr_in,init->get_type(),type_defined,id);
 	    }
 
 
+	    // TODO: add type_defined / type_infer
         scope_table.addid(id, type_defined);
 
 	    // deal with expr
@@ -845,8 +856,8 @@ void ClassTable::getExpressionType(
             Symbol id = branch_ptr->get_name();
 
             Symbol type_defined = branch_ptr->get_type_decl();
-            if ((type_defined != SELF_TYPE) && (!hasKeyInMap(type_defined,inher_map_))){
-                // TODO: error for type_defined not exist
+            if (!checkClassExist(type_defined)){
+				// TODO Type not exist
             }
 
             Expression branch_body = branch_ptr->get_expr();
@@ -1046,8 +1057,8 @@ const std::deque<Symbol> ClassTable::getInherDQ(Symbol curr) const {
 
 // a helper function for type checking semant error
 void ClassTable::semant_type_error(
-  const Class_  c, tree_node *expr_in, 
-  const Symbol type_infer, const Symbol type_defined, const Symbol id_name) {
+  const Class_&  c, tree_node *expr_in,
+  const Symbol& type_infer, const Symbol& type_defined, const Symbol& id_name) {
 	semant_error(c->get_filename(),expr_in) 
 		<< "Type " << type_infer
 		<< " of assigned expression does not conform to declared type "
@@ -1055,6 +1066,12 @@ void ClassTable::semant_type_error(
 	;
 }
 
+void ClassTable::semant_init_type(const Class_ &c, tree_node *expr_in, const Symbol &type_infer,
+								  const Symbol &type_defined, const Symbol &id_name) {
+	semant_error(c->get_filename(),expr_in) << "Inferred type "<<type_infer<<" of initialization of "<<id_name
+											<<" does not conform to identifier's declared type "
+			 <<type_defined<<"." << std::endl;
+}
 ////////////////////////////////////////////////////////////////////
 //
 // semant_error is an overloaded function for reporting errors

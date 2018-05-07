@@ -50,6 +50,8 @@ public:
                            const Symbol type_infer_in,
                            const SymbolTable<Symbol, Entry>& scope_table,
                            const Symbol class_name);
+  bool checkClassExist(Symbol type_defined);
+
 
   // return NULL on type_check failure / NULL is passed as expr_in
   void getExpressionType(const Class_ c, const Expression expr_in, SymbolTable<Symbol, Entry>& scope_table);
@@ -76,11 +78,14 @@ public:
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
 
-  // type_error
+  // type_error (type mismatch)
   void semant_type_error(
-    const Class_  c, tree_node *expr_in, 
-    const Symbol type_infer, const Symbol type_defined, const Symbol id_name);
+    const Class_&  c, tree_node *expr_in,
+    const Symbol& type_infer, const Symbol& type_defined, const Symbol& id_name);
 
+  // type error while initializing variable
+  void semant_init_type(const Class_& c, tree_node * expr_in, const Symbol& type_infer,
+                        const Symbol& type_defined, const Symbol& id_name);
   
   template <class K, class V>
   std::map<K, bool> initCheckMap(const std::map<K, V>&) const;
