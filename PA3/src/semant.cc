@@ -465,10 +465,13 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 	  iter != attr_map_[class_name].end();
 	  ++iter){
 		Attribute a = attr_map_[class_name][iter->first];
-		//
-		if (typeid(*a->getInit()) == typeid(no_expr_class)){
+		// Attribute may have no init expression,
+		// or a inherited attribute may have been evaluated by it's parent before,
+		// either case, we don't need to evaluate it.
+		if (typeid(*a->getInit()) == typeid(no_expr_class) || a->hasBeenEvaluated()){
 			continue;
 		}
+
 		// One scope for each attribute's init.
 		tbl.enterscope();
 		getExpressionType(c, a->getInit(), tbl);

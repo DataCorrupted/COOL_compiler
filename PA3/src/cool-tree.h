@@ -254,6 +254,8 @@ public:
    const Symbol getName() const { return name; };
    const Symbol getType() const { return type_decl; };
    const Expression getInit() const { return init; };
+   // Having a non-NULL type means this attribute has been evaluated before.
+   const bool hasBeenEvaluated() const { return init->get_type() != NULL; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
