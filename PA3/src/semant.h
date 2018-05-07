@@ -50,7 +50,7 @@ public:
                            const Symbol type_infer_in,
                            const SymbolTable<Symbol, Entry>& scope_table,
                            const Symbol class_name);
-  bool checkClassExist(Symbol type_defined);
+  bool checkClassExist(const Symbol);
 
 
   // return NULL on type_check failure / NULL is passed as expr_in
@@ -86,7 +86,10 @@ public:
   // type error while initializing variable
   void semant_init_type(const Class_& c, tree_node * expr_in, const Symbol& type_infer,
                         const Symbol& type_defined, const Symbol& id_name);
-  
+
+  // undeclared identifier
+  void semant_undeclared_id(const Class_& c, tree_node * expr_in, const Symbol& id_name);
+
   template <class K, class V>
   std::map<K, bool> initCheckMap(const std::map<K, V>&) const;
 

@@ -12,7 +12,11 @@ class Main{
 	};
 
 	foo(): Int{
-		mid <- (let x : Int <- x in (x < 12))
+		{
+			id <- (let x : Int <- x in (x < 12));
+			mid <- (let x : Int <- y in (x < 12));
+			mid <- (let x : Int <- y in (x + 12));
+		}
 	};
 };
 
