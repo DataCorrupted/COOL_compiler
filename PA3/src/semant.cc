@@ -446,8 +446,8 @@ void ClassTable::checkEachClassType(){
 void ClassTable::checkMethodsReturnType(const Class_ c){
 	Symbol class_name = c->getName();
 	
-	// It's not necessary anymore whether father or son goes first.
-	// But we still did it anyway.
+	// It's necessary to check parents first as attribute need to 
+	// be initialized by parents first.
 	if (class_name != Object && !checked_[c->getParent()]){
 		checkMethodsReturnType(inher_map_[c->getParent()]);
 	}
