@@ -796,8 +796,16 @@ void ClassTable::getExpressionType(
 	    scope_table.exitscope();
 
 
-	} else if (true /* branch */) {
-		;
+	}
+	else if (typeid(*expr_in) == typeid(typcase_class)){
+		typcase_class * expr_typecase = (typcase_class *) expr_in;
+		getExpressionType(c,expr_typecase->get_expr(),scope_table);
+		// TODO
+	}
+	else if (typeid(*expr_in) == typeid(branch_class) /* branch */) {
+		scope_table.enterscope();
+		// TODO
+		scope_table.exitscope();
 	} else {
 		// raise error if still no match
 		throw 6;
