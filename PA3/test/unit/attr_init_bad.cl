@@ -5,7 +5,6 @@ class A{
 };
 
 class Main{
-	b: D <- new D;
 	c: String <- {
 		1 < 2;
 		let a: Int <- 1 in {
@@ -13,11 +12,12 @@ class Main{
 			a;
 		};
 	};
-	d: C;
+	d: Int;
 	main(): Int{
 		1
 	};
 };
+
 class B inherits A{
 	a: Int <- 1	;
 	m(): String{ 1};

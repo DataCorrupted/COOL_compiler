@@ -353,41 +353,42 @@ void ClassTable::collectFeatures(const Class_ c){
 			if (hasKeyInMap(a->getName(), attr_map_[c->getParent()])){
 				semant_error(c->get_filename(), f) 
 					<< "Attribute " << c->getName() << "." << a->getName()
-					<< " which has already been defined in it's parent class."
+					<< " which has already been defined in it's parent class: " << c->getParent()
+					<< ". We will ignore this definition.\n"
 				;
 			} else if (hasKeyInMap(a->getName(), attr_map_[c->getName()])) {
 				semant_error(c->get_filename(), f) 
 					<< "Attribute " << c->getName() << "." << a->getName()
 					<< " which duplicats with the one defined in "
 					<< c->get_filename() << ":" << a->get_line_number()
+					<< ". We will ignore this definition.\n"
 				;			
 			} else {
 				attr_map_[c->getName()]
 					.insert(
 						std::pair<Symbol, Symbol>(a->getName(), a->getType())
 					);
-			}
-			if ((typeid(*a->getInit()) != typeid(no_expr_class))){
-				// One scope for each attribute's init.
-				SymbolTable<Symbol, Symbol> tbl;
-				tbl.enterscope();
-				getExpressionType(c, a->getInit(), tbl);
-				tbl.exitscope();
+				if ((typeid(*a->getInit()) != typeid(no_expr_class))){
+					// One scope for each attribute's init.
+					SymbolTable<Symbol, Symbol> tbl;
+					tbl.enterscope();
+					getExpressionType(c, a->getInit(), tbl);
+					tbl.exitscope();
 
-				if (hasKeyInMap(a->getType(), inher_map_) && !le(a->getInit()->get_type(), a->getType())){
-					semant_error(c->get_filename(), f)
-						<< "Attribute " << c->getName() << "." << a->getName()
-						<< " expected type: " << a->getType() << ", "
-						<< "got type: " << a->getInit()->get_type() << "\n"
-					;
-				} else if (!hasKeyInMap(a->getType(), inher_map_)){
-					semant_error(c->get_filename(), f)
-						<< "Attribute " << c->getName() << "." << a->getName()
-						<< " has undefined type: " << a->getType() << ".\n"
-					;					
+					if (hasKeyInMap(a->getType(), inher_map_) && !le(a->getInit()->get_type(), a->getType())){
+						semant_error(c->get_filename(), f)
+							<< "Attribute " << c->getName() << "." << a->getName()
+							<< " expected type: " << a->getType() << ", "
+							<< "got type: " << a->getInit()->get_type() << "\n"
+						;
+					} else if (!hasKeyInMap(a->getType(), inher_map_)){
+						semant_error(c->get_filename(), f)
+							<< "Attribute " << c->getName() << "." << a->getName()
+							<< " has undefined type: " << a->getType() << ".\n"
+						;					
+					}
 				}
 			}
-
 		} else {
 			Method m = dynamic_cast<Method>(f);
 
@@ -418,9 +419,11 @@ void ClassTable::collectFeatures(const Class_ c){
 					semant_error(c->get_filename(), f) 
 						<< "Method " << c->getName() << "." << m->getMethodSignature()
 						<< " has different sinature with it's parents' method: "
-						<< c->getParent() << "." << parent_method->getMethodSignature() 
-						<< "\n"
+						<< c->getParent() << "." << parent_method->getMethodSignature() << "\n"
 					;
+				} else {
+					// Legal overload. 
+					method_map_[c->getName()][m->getName()] = m;
 				}
 
 			// In itself's method table, this is a duplicated method.
@@ -928,7 +931,6 @@ const bool ClassTable::le(Symbol a, const Symbol b) const {
 	if (!hasKeyInMap(a, inher_map_) || !hasKeyInMap(b, inher_map_)){
 		return false;
 	}
-
 	// Everyone is le Object.
 	if (b == Object) { return true; }
 	// Find a's parent until it gets to b.
@@ -940,8 +942,8 @@ const bool ClassTable::le(Symbol a, const Symbol b) const {
 }
 
 const Symbol ClassTable::getSharedParent(const Symbol a, const Symbol b) const {
-	std::deque<Symbol> a_path = getInherVec(a);
-	std::deque<Symbol> b_path = getInherVec(b);
+	std::deque<Symbol> a_path = getInherDQ(a);
+	std::deque<Symbol> b_path = getInherDQ(b);
 
 	unsigned int i = 0;
 	while (
@@ -953,7 +955,7 @@ const Symbol ClassTable::getSharedParent(const Symbol a, const Symbol b) const {
 	return a_path[i];
 }
 
-const std::deque<Symbol> ClassTable::getInherVec(Symbol curr) const {
+const std::deque<Symbol> ClassTable::getInherDQ(Symbol curr) const {
 	std::deque<Symbol> inher_vec;
 	inher_vec.push_front(curr);
 	while (curr != Object){
@@ -964,11 +966,14 @@ const std::deque<Symbol> ClassTable::getInherVec(Symbol curr) const {
 }
 
 // a helper function for type checking semant error
-void ClassTable::semant_type_error(Class_  c, tree_node *expr_in , Symbol type_infer, Symbol type_defined,
-									   Symbol id_name) {
-	semant_error(c->get_filename(),expr_in) << "Type " << type_infer
-											<< " of assigned expression does not conform to declared type "
-			  << type_defined <<" of identifier "<<id_name<<"." << std::endl;
+void ClassTable::semant_type_error(
+  const Class_  c, tree_node *expr_in, 
+  const Symbol type_infer, const Symbol type_defined, const Symbol id_name) {
+	semant_error(c->get_filename(),expr_in) 
+		<< "Type " << type_infer
+		<< " of assigned expression does not conform to declared type "
+		<< type_defined << " of identifier " << id_name << ".\n"
+	;
 }
 
 ////////////////////////////////////////////////////////////////////

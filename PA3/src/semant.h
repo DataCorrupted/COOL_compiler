@@ -69,7 +69,7 @@ public:
   // Check if two type satisfy a <= b;  
   const bool le(Symbol, const Symbol) const;
   const Symbol getSharedParent(const Symbol, const Symbol) const;
-  const std::deque<Symbol> getInherVec(Symbol) const;
+  const std::deque<Symbol> getInherDQ(Symbol) const;
 
   int errors() { return semant_errors; }
   ostream& semant_error();
@@ -77,7 +77,9 @@ public:
   ostream& semant_error(Symbol filename, tree_node *t);
 
   // type_error
-  void semant_type_error(Class_  c, tree_node *expr_in, Symbol type_infer, Symbol type_defined, Symbol id_name);
+  void semant_type_error(
+    const Class_  c, tree_node *expr_in, 
+    const Symbol type_infer, const Symbol type_defined, const Symbol id_name);
 
   
   template <class K, class V>
