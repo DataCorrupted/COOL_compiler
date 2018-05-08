@@ -571,7 +571,7 @@ const bool ClassTable::checkMethodSignType(const Class_ c, const Method m, Symbo
 
 void ClassTable::checkMainExists() {
 	if (!hasKeyInMap(Main, inher_map_)){
-		semant_error() << "Class Main not found.\n";
+		semant_error() << "Class Main is not defined.\n";
 	}
 }
 
