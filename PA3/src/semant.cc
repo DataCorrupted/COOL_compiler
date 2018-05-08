@@ -947,8 +947,11 @@ void ClassTable::assignDispatchType(
 	for (int i=0; i<len; i++){
 		Symbol expr_type = expr_list->nth(i)->get_type();
 		Symbol form_type = formal_list->nth(i)->getType();
-		// Can't have SELF_TYPE as parameter type.
-		if (expr_type == SELF_TYPE || !le(expr_type, form_type)){
+		
+		Symbol cast_type = (expr_type == SELF_TYPE) ? c->getName(): expr_type;
+		// Actually, you can have SELF_TYPE as parameter type.
+		// Just it can't be formal's type.
+		if (!le(cast_type, form_type)){
 			semant_error(c->get_filename(), e)
 				<< "In call of method " << c->getName() << "." << m->getMethodSignature()
 				<< " parameter " << i << " expected type " << form_type
