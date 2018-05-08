@@ -2,11 +2,11 @@
 
 import os
 import sys
-
+from colors import bcolors
 def compare(file):
-	print("Testing your code...")
+	bcolors.print(bcolors.BOLD, "Generating your output...")
 	os.system("./tools-bin/lexer " + file + " | ./tools-bin/parser | ./semant >O1")
-	print("Generating standard output...")
+	bcolors.print(bcolors.BOLD, "Generating standard output...")
 	os.system("./tools-bin/lexer " + file + " | ./tools-bin/parser | ./tools-bin/semant >O2")
 	result = os.system("cmp O1 O2")
 	return result >> 8
