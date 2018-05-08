@@ -528,8 +528,8 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 		if (!hasKeyInMap(expr_cast, inher_map_) || 
 		// returned type not le than defined type
 		  ((m->getType() != SELF_TYPE && !le(expr_cast, m->getType())) ||
-		// returned type is not SELF_TYPE when it should be.
-		  (m->getType() == SELF_TYPE && returned_type != SELF_TYPE))){
+		// returned type <= SELF_TYPE_C not satisfied.
+		  (m->getType() == SELF_TYPE && !le(expr_cast, c->getName())))){
 			semant_error(c->get_filename(), m)
 				<< "Method " << c->getName() << "." << m->getMethodSignature()
 				<< " expected return type: " << m->getType() << ", "
@@ -869,12 +869,22 @@ void ClassTable::getExpressionType(
 
             Expression branch_body = branch_ptr->get_expr();
             getExpressionType(c,branch_body,scope_table);
-            Symbol tmp = branch_body->get_type();
-            tmp = (tmp == SELF_TYPE)? c->getName(): tmp;
+            Symbol type = branch_body->get_type();
 
             // find the common parent of all exprs
-            if (i == 0)     common_parent = tmp;
-            else            common_parent = getSharedParent(common_parent, tmp);
+            if (i == 0){
+            	common_parent = type;
+            } else {
+            	if (type == SELF_TYPE && common_parent == SELF_TYPE){
+            		// Comment parent is still SELF_TYPE
+            		;
+            	} else {
+            		type = (type == SELF_TYPE)? c->getName(): type;
+            		common_parent = (common_parent == SELF_TYPE)? c->getName(): common_parent;
+
+	            	common_parent = getSharedParent(common_parent, type);
+            	}
+            }            
 
             scope_table.exitscope();
         }
