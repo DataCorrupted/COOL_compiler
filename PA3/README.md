@@ -80,9 +80,14 @@ Arithmetic & Compare operators
 
 ### Contact:
 
-caijx@shanghaitech.edu.cn, ID: 69850764
+caijx@shanghaitech.edu.cn, ID: 67771603
 
 ### Contribution
+Expression Type check (everything but excluding dispatch & Arithmetic)
+
+AST type infer and assignment
+
+Related testing and debugging
 
 ### Implemented functions
 ```cpp
