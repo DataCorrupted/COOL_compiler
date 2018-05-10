@@ -15,14 +15,16 @@ This folder originates from Stanford CS143. Missing folders and files(mainly bin
 
 ## scripts
 
-	compiler.sh 	While compling can be tiresome, I write a script for that. It will generate
+	compile.sh 	While compling can be tiresome, I write a script for that. It will generate
 			a binary and put it in PA3/
-	cmp.sh <file>	will compile your code, run lexer and compare your parser's output and 
+	cmp.py <file>	will compile your code, run lexer and compare your parser's output and 
 			official's(tools-bin/semant) given the input <file> you specified.
+	all_test.py <path> 
+			Test all *.cl files in the given path. 
 
 The environment for these two scripts should be in _PA3/_, or they may not work. Run them by
 	
-	./scripts/<script>.sh {file}
+	./scripts/<script> {file}
 
 ## cool-support
 
