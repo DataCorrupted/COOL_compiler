@@ -6,7 +6,7 @@ This folder originates from Stanford CS143. Missing folders and files(mainly bin
 
 	semant.(cc/h)	are my code. You can read them or modify them.
 	cool-tree.h* 	also my code.
-	Makefile 	Use command "make" to generate a binary. You should not modify them.
+	Makefile 	Use command "make" to generate a binary. You should not modify them. By 		default we uses C++09.
 
 ## test
 
