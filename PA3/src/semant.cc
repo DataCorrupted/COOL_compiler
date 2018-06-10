@@ -510,7 +510,6 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 		}
 
 		tbl.enterscope();
-//std::cerr << c->getName() << "." << m->getMethodSignature() << "\n";
 		// This method contains unknown type in it's signature.
 		checkMethodSignType(c, m, tbl);
 		// Each expression will be assigned a type inside getExpressionType().
@@ -519,7 +518,6 @@ void ClassTable::checkMethodsReturnType(const Class_ c){
 		tbl.exitscope();
 
 		Symbol returned_type = m->getExpr()->get_type();
-//std::cerr << returned_type << "\n";
 		// This should not happen. Or alien just attacked EARTH.
 		if (returned_type == NULL){	continue; }
 
@@ -638,13 +636,13 @@ void ClassTable::getExpressionType(
 		object_class * expr_obj = (object_class *) expr_in;
 		Symbol object_type_ptr = scope_table.lookup(expr_obj->get_name());
 		if (object_type_ptr == NULL){
-		    // if object not defined before
-            semant_undeclared_id(c,expr_in,expr_obj->get_name());
-		    expr_in->set_type(Object);
+			// if object not defined before
+			semant_undeclared_id(c,expr_in,expr_obj->get_name());
+			expr_in->set_type(Object);
 		}
 		else {
-            expr_in->set_type(object_type_ptr);
-        }
+			expr_in->set_type(object_type_ptr);
+		}
 	}
 
 	// isvoid
@@ -678,16 +676,15 @@ void ClassTable::getExpressionType(
 		Symbol type_infer = expr_assign->get_expr()->get_type();
 
 		// type checking
-		// std::cout << "type_inferred: " << type_infer << std::endl;
 		Symbol type_defined = scope_table.lookup(expr_assign->get_name());
 		if (type_defined == NULL){
-		    // expr_in->dump_type(std::cerr,0);
-			semant_error(c->get_filename(),expr_in) << "Assignment to undeclared variable "
-                                              <<expr_assign->get_name()<<"." << std::endl;
+			semant_error(c->get_filename(),expr_in) 
+				<< "Assignment to undeclared variable "
+				<<expr_assign->get_name()<<"." << std::endl
+			;
 			type_defined = Object;
 		}
 
-		// std::cout << "type_defined: " << type_defined  << std::endl;
 		if (!checkExpressionType(type_defined,type_infer,scope_table,c->getName())){
 			semant_type_error(c,expr_in,type_infer,type_defined,expr_assign->get_name());
 		}
@@ -758,8 +755,10 @@ void ClassTable::getExpressionType(
 		comp_class * expr_comp = (comp_class *) expr_in;
 		getExpressionType(c,expr_comp->get_expr(),scope_table);
 		if (expr_comp->get_expr()->get_type() != Bool){
-			semant_error(c->get_filename(),expr_in) << "Argument of 'not' has type "<<
-                                                    expr_comp->get_expr()->get_type() <<" instead of Bool."<< std::endl;
+			semant_error(c->get_filename(),expr_in) 
+				<< "Argument of 'not' has type "
+				<< expr_comp->get_expr()->get_type() <<" instead of Bool.\n"
+			;
 		}
 		expr_comp->set_type(Bool);
 
@@ -783,8 +782,9 @@ void ClassTable::getExpressionType(
 		Symbol type_1 = expr_neg->get_expr()->get_type();
 
 		if (type_1 != Int){
-			semant_error(c->get_filename(),expr_in) << "Argument of '~' has type "<< type_1
-													<<" instead of Int." << std::endl;
+			semant_error(c->get_filename(),expr_in) 
+				<< "Argument of '~' has type "<< type_1
+				<<" instead of Int.\n";
 		}
 		expr_neg->set_type(type_1);
 
@@ -818,30 +818,32 @@ void ClassTable::getExpressionType(
 		scope_table.enterscope();
 
 		Symbol id = expr_let->get_id();
-	    Symbol type_defined = expr_let->get_type_decl();
-	    if (!checkClassExist(type_defined)){
-            semant_error(c->get_filename(),expr_in)
-                    << "Class " << type_defined << " of let-bound identifier "<<id<<" is undefined." << std::endl;
-	    }
+		Symbol type_defined = expr_let->get_type_decl();
+		if (!checkClassExist(type_defined)){
+			semant_error(c->get_filename(),expr_in)
+				<< "Class " << type_defined << " of let-bound identifier "
+				<< id << " is undefined.\n"
+			;
+		}
 
-	    // deal with init (assign and creat new value)
-	    Expression init = expr_let->get_init();
-	    getExpressionType(c,init,scope_table);
+		// deal with init (assign and creat new value)
+		Expression init = expr_let->get_init();
+		getExpressionType(c,init,scope_table);
 
 
-	    if ((init->get_type() != No_type) && (!checkExpressionType(type_defined,init->get_type(),scope_table,c->getName()))){
-            semant_init_type(c,expr_in,init->get_type(),type_defined,id);
-	    }
+		if ((init->get_type() != No_type) && (!checkExpressionType(type_defined,init->get_type(),scope_table,c->getName()))){
+			semant_init_type(c,expr_in,init->get_type(),type_defined,id);
+		}
 
-        scope_table.addid(id, type_defined);
+		scope_table.addid(id, type_defined);
 
-	    // deal with expr
+		// deal with expr
 		Expression expr_body = expr_let->get_body();
 		getExpressionType(c,expr_body,scope_table);
 		checkExpressionType(type_defined,expr_body->get_type(),scope_table,c->getName());
 		expr_let->set_type(expr_body->get_type());
 
-	    scope_table.exitscope();
+		scope_table.exitscope();
 
 
 	}
@@ -851,46 +853,47 @@ void ClassTable::getExpressionType(
 		getExpressionType(c,expr_typecase->get_expr(),scope_table);
 
 		// get the cases (deal with all branches)
-        Cases expr_cases = expr_typecase->get_cases();
-        Symbol common_parent;
-        for (int i = 0; i < expr_cases->len(); i++){
-            Case_class * case_ptr = expr_cases->nth(i);
-            branch_class * branch_ptr = (branch_class * ) case_ptr;
+		Cases expr_cases = expr_typecase->get_cases();
+		Symbol common_parent;
+		for (int i = 0; i < expr_cases->len(); i++){
+			Case_class * case_ptr = expr_cases->nth(i);
+			branch_class * branch_ptr = (branch_class * ) case_ptr;
 
-            scope_table.enterscope();
+			scope_table.enterscope();
 
-            Symbol id = branch_ptr->get_name();
+			Symbol id = branch_ptr->get_name();
 
-            Symbol type_defined = branch_ptr->get_type_decl();
-            if (!checkClassExist(type_defined)){
-                semant_error(c->get_filename(),branch_ptr) << "Class "<<type_defined
-                                                        <<" of case branch is undefined." << std::endl;
-            }
+			Symbol type_defined = branch_ptr->get_type_decl();
+			if (!checkClassExist(type_defined)){
+				semant_error(c->get_filename(),branch_ptr) 
+					<< "Class "<<type_defined
+					<<" of case branch is undefined." << std::endl;
+			}
 
-            scope_table.addid(id,type_defined);
+			scope_table.addid(id,type_defined);
 
-            Expression branch_body = branch_ptr->get_expr();
-            getExpressionType(c,branch_body,scope_table);
-            Symbol type = branch_body->get_type();
+			Expression branch_body = branch_ptr->get_expr();
+			getExpressionType(c,branch_body,scope_table);
+			Symbol type = branch_body->get_type();
 
-            // find the common parent of all exprs
-            if (i == 0){
-            	common_parent = type;
-            } else {
-            	if (type == SELF_TYPE && common_parent == SELF_TYPE){
-            		// Comment parent is still SELF_TYPE
-            		;
-            	} else {
-            		type = (type == SELF_TYPE)? c->getName(): type;
-            		common_parent = (common_parent == SELF_TYPE)? c->getName(): common_parent;
+			// find the common parent of all exprs
+			if (i == 0){
+				common_parent = type;
+			} else {
+				if (type == SELF_TYPE && common_parent == SELF_TYPE){
+					// Comment parent is still SELF_TYPE
+					;
+				} else {
+					type = (type == SELF_TYPE)? c->getName(): type;
+					common_parent = (common_parent == SELF_TYPE)? c->getName(): common_parent;
 
-	            	common_parent = getSharedParent(common_parent, type);
-            	}
-            }            
+					common_parent = getSharedParent(common_parent, type);
+				}
+			}            
 
-            scope_table.exitscope();
-        }
-        expr_typecase->set_type(common_parent);
+			scope_table.exitscope();
+		}
+		expr_typecase->set_type(common_parent);
 	}
 	else {
 		// raise error if still no match
@@ -901,11 +904,11 @@ void ClassTable::getExpressionType(
 template <class Dispatch>
 void ClassTable::assignDispatchType(
   const Class_ c, const Expression e, SymbolTable<Symbol, Entry>& tbl){
-  	
-  	Dispatch d = dynamic_cast<Dispatch>(e);
+	
+	Dispatch d = dynamic_cast<Dispatch>(e);
 
 
-  	/* Evaluate each and every expression. */
+	/* Evaluate each and every expression. */
 	getExpressionType(c, d->getExpr(), tbl);
 	Expressions expr_list = d->getExprList();
 	for (int i=0; i<expr_list->len(); i++){
@@ -1093,15 +1096,17 @@ void ClassTable::semant_type_error(
 
 void ClassTable::semant_init_type(const Class_ &c, tree_node *expr_in, const Symbol &type_infer,
 								  const Symbol &type_defined, const Symbol &id_name) {
-	semant_error(c->get_filename(),expr_in) << "Inferred type "<<type_infer<<" of initialization of "<<id_name
-											<<" does not conform to identifier's declared type "
-			 <<type_defined<<"." << std::endl;
+	semant_error(c->get_filename(),expr_in) 
+		<< "Inferred type "<<type_infer<<" of initialization of "<<id_name
+		<< " does not conform to identifier's declared type "
+		<< type_defined << "." << std::endl;
 }
 
 void ClassTable::semant_undeclared_id(const Class_ &c, tree_node *expr_in, const Symbol &id_name) {
 	// if object not defined before
-	semant_error(c->get_filename(),expr_in) << "Undeclared identifier "<<id_name
-											<<"." << std::endl;
+	semant_error(c->get_filename(),expr_in) 
+		<< "Undeclared identifier "<<id_name
+		<< "." << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////
