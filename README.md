@@ -22,3 +22,15 @@ My _cool.y_ couldn't correctly print all the error log, but the parser functions
 ## PA3
 
 A semantic analysis written for COOL.
+
+## PA4
+
+Code generator.
+
+## PA\*/tools-bin/cgen
+
+This file is compiled under 32bit machine, you need to install the _libc_ support before you can run it on 64bit machine:
+
+```shell
+sudo apt-get install libc6-i386 lib32stdc++6 
+```
