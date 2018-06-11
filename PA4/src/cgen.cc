@@ -944,7 +944,6 @@ void mul_class::code(ostream &s) {
 	// Doing the op.
 	emit_mul(T1, T1, T2, s);
 	emit_store_int(T1, ACC, s);
-
 }
 
 void divide_class::code(ostream &s) {
@@ -955,15 +954,38 @@ void divide_class::code(ostream &s) {
 }
 
 void neg_class::code(ostream &s) {
+	e1->code(s);
+
+}
+
+void lessThanCommon(Expression e1, Expression e2, ostream& s, const bool eq){
+	label_cnt ++; 	int label_isles = label_cnt; 
+	label_cnt ++;	int label_endif = label_cnt;
+	arith_common(e1, e2, s);
+	if (eq){
+		emit_blt(T1, T2, label_isles, s);
+	} else {
+		emit_bleq(T1, T2, label_isles, s);
+	}
+	// Else branch.
+	emit_load_bool(ACC, falsebool, s);
+	emit_branch(label_endif, s);
+	// Then branch. T1 <(=) T2.
+	emit_label_def(label_isles, s);
+	emit_load_bool(ACC, truebool, s);
+	// Endif.
+	emit_label_def(label_endif, s);
 }
 
 void lt_class::code(ostream &s) {
-}
-
-void eq_class::code(ostream &s) {
+	lessThanCommon(e1, e2, s, false);
 }
 
 void leq_class::code(ostream &s) {
+	lessThanCommon(e1, e2, s, true);
+}
+
+void eq_class::code(ostream &s) {
 }
 
 void comp_class::code(ostream &s) {
