@@ -28,6 +28,11 @@
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
 
+// Counting the LAST USED label. 
+// Add 1 to create new label.
+int label_cnt = 0;
+int local_var_cnt = 1;
+
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
 // If e : No_type, then no code is generated for e.
@@ -901,16 +906,52 @@ void block_class::code(ostream &s) {
 void let_class::code(ostream &s) {
 }
 
+
+void arith_common(Expression e1, Expression e2, ostream& s){
+	// Eval e1.
+	e1->code(s);
+	emit_push(ACC, s);
+	local_var_cnt ++;
+	e2->code(s);
+	// Many versions have copy here. 
+	// I don't think it's necessary.
+
+	// Take e1.
+	emit_load(T1, 1, SP, s);
+	emit_addiu(SP, SP, WORD_SIZE, s);
+	local_var_cnt--;	
+
+	// Move Acc to t2.
+	emit_move(T2, ACC, s);
+}
+
 void plus_class::code(ostream &s) {
+	arith_common(e1, e2, s);
+	// Doing the op.
+	emit_addu(T1, T1, T2, s);
+	emit_store_int(T1, ACC, s);
 }
 
 void sub_class::code(ostream &s) {
+	arith_common(e1, e2, s);
+	// Doing the op.
+	emit_sub(T1, T1, T2, s);
+	emit_store_int(T1, ACC, s);
 }
 
 void mul_class::code(ostream &s) {
+	arith_common(e1, e2, s);
+	// Doing the op.
+	emit_mul(T1, T1, T2, s);
+	emit_store_int(T1, ACC, s);
+
 }
 
 void divide_class::code(ostream &s) {
+	arith_common(e1, e2, s);
+	// Doing the op.
+	emit_div(T1, T1, T2, s);
+	emit_store_int(T1, ACC, s);
 }
 
 void neg_class::code(ostream &s) {
@@ -950,6 +991,22 @@ void new__class::code(ostream &s) {
 }
 
 void isvoid_class::code(ostream &s) {
+	label_cnt ++; 	int label_isvod = label_cnt;
+	label_cnt ++; 	int label_endif = label_cnt;
+
+	s << "# Evaluate e1" << endl;
+	e1->code(s);
+	s << "# e1 is not void" << endl;
+	emit_beq(ACC, ZERO, label_isvod, s);
+	emit_load_bool(ACC, falsebool, s);
+	emit_branch(label_endif, s);
+	
+	s << "# e1 is void" << endl;
+	emit_label_def(label_isvod, s);
+	emit_load_bool(ACC, truebool, s);
+
+	s << "# End if" << endl;
+	emit_label_def(label_endif, s);
 }
 
 void no_expr_class::code(ostream &s) {
