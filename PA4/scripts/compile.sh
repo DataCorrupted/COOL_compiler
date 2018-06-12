@@ -1,11 +1,12 @@
 #!/bin/bash
+
 cd src/
 shopt -s extglob
-stderr=$(make)
+if_fail=$(make)
 
-if (echo "$stderr" | grep failed)
+if (echo "$if_fail" | grep failed)
 then
-  echo "Compilation failed."
+	echo "Compilation failed."
 else
 	mv cgen ../
 	rm *.o 
