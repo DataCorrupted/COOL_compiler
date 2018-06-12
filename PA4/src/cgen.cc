@@ -315,6 +315,10 @@ static void emit_branch(int l, ostream& s)
 	s << endl;
 }
 
+static void emit_copy(ostream& s){
+	emit_jal("Object.copy", s);
+}
+
 //
 // Push a register on the stack. The stack grows towards smaller addresses.
 //
@@ -946,20 +950,23 @@ void block_class::code(ostream &s) {
 void let_class::code(ostream &s) {
 }
 
-
+// Notice that arith are based on Int type and thus need to
+// use fetch int.
 void arith_common(Expression e1, Expression e2, ostream& s){
 	// Eval e1.
 	e1->code(s);
+	emit_fetch_int(ACC, ACC, s);
 	emit_push(ACC, s);
 	local_var_cnt ++;
 	e2->code(s);
+	emit_copy(s);
 	// Take e1.
 	emit_load(T1, 1, SP, s);
 	emit_addiu(SP, SP, WORD_SIZE, s);
 	local_var_cnt--;	
 
 	// Move Acc to t2.
-	emit_move(T2, ACC, s);
+	emit_fetch_int(T2, ACC, s);
 }
 
 void plus_class::code(ostream &s) {
@@ -990,14 +997,25 @@ void divide_class::code(ostream &s) {
 	emit_store_int(T1, ACC, s);
 }
 
-// Negate
+// Negate.
 void neg_class::code(ostream &s) {
 	e1->code(s);
 	emit_neg(ACC, ACC, s);
+	emit_copy(s);
+    emit_load(T1, 3, ACC, s);
+    emit_neg(T1, T1, s);
+    emit_store(T1, 3, ACC, s);
 }
 
 // Not
 void comp_class::code(ostream &s) {
+	int label_endcomp = newLabel();
+	e1->code(s);
+	emit_load(T1, 3, ACC, s);
+	emit_load_bool(ACC, truebool, s);
+	emit_beqz(T1, label_endcomp, s);
+	emit_load_bool(ACC, falsebool, s);
+	DEF_LABEL(label_endcomp);
 }
 
 void lessThanCommon(Expression e1, Expression e2, ostream& s, const bool eq){
@@ -1030,7 +1048,16 @@ void leq_class::code(ostream &s) {
 void eq_class::code(ostream &s) {
 	int label_ptreq = newLabel();
 
-	arith_common(e1, e2, s);
+	e1->code(s);
+	emit_push(ACC, s);
+	local_var_cnt ++;
+	e2->code(s);
+	local_var_cnt --;
+
+	emit_load(T1, 1, SP, s);
+	emit_addiu(SP, SP, WORD_SIZE, s);
+	emit_move(T2, ACC, s);
+	
 	// See this usage of function equality_test in 
 	// trap.s line 458.
 	emit_load_bool(ACC, truebool, s);
@@ -1069,18 +1096,14 @@ void isvoid_class::code(ostream &s) {
 	int label_isvod = newLabel();
 	int label_endif = newLabel();
 
-	s << "# Evaluate e1" << endl;
 	e1->code(s);
-	s << "# e1 is not void" << endl;
-	emit_beq(ACC, ZERO, label_isvod, s);
+	emit_beqz(ACC, label_isvod, s);
 	emit_load_bool(ACC, falsebool, s);
 	emit_branch(label_endif, s);
 	
-	s << "# e1 is void" << endl;
 	DEF_LABEL(label_isvod);
 	emit_load_bool(ACC, truebool, s);
 
-	s << "# End if" << endl;
 	DEF_LABEL(label_endif);
 }
 
