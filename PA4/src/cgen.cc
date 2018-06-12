@@ -913,9 +913,6 @@ void arith_common(Expression e1, Expression e2, ostream& s){
 	emit_push(ACC, s);
 	local_var_cnt ++;
 	e2->code(s);
-	// Many versions have copy here. 
-	// I don't think it's necessary.
-
 	// Take e1.
 	emit_load(T1, 1, SP, s);
 	emit_addiu(SP, SP, WORD_SIZE, s);
@@ -954,8 +951,6 @@ void divide_class::code(ostream &s) {
 }
 
 void neg_class::code(ostream &s) {
-	e1->code(s);
-
 }
 
 void lessThanCommon(Expression e1, Expression e2, ostream& s, const bool eq){
@@ -986,6 +981,20 @@ void leq_class::code(ostream &s) {
 }
 
 void eq_class::code(ostream &s) {
+	label_cnt ++; 	int label_ptreq = label_cnt;
+
+	arith_common(e1, e2, s);
+	// See this usage of function equality_test in 
+	// trap.s line 458.
+	emit_load_bool(ACC, truebool, s);
+	emit_load_bool(A1, falsebool, s);
+
+	// Of the same ptr/value, don't bother to compare.
+	emit_beq(T1, T2, label_ptreq, s);
+		// Call eq test.
+		emit_jal("equality_test", s);
+	emit_label_def(label_ptreq, s);
+	// End of branch.
 }
 
 void comp_class::code(ostream &s) {
