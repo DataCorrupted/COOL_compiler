@@ -47,7 +47,7 @@ def main():
 		if (stop_when_false and result == 1) or not stop_when_false:
 			pause();
 		print()
-	os.system("rm semant")
+	os.system("rm cgen")
 
 if __name__ == "__main__":
 	main();

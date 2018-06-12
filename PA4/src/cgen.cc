@@ -28,9 +28,6 @@
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
 
-// Counting the LAST USED label. 
-// Add 1 to create new label.
-int label_cnt = 0;
 int local_var_cnt = 1;
 
 //
@@ -882,6 +879,19 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 //
 //*****************************************************************
 
+// Counting the LAST USED label. 
+// Add 1 to create new label.
+// Initially it's -1. The first usable label is 0.
+int label_cnt = -1;
+// Labels are counted in terms of int. Each decimal number represents
+// a new lebel. To create a new one, simply add it and return it.
+int newLabel(){
+	label_cnt ++;
+	return label_cnt;
+}
+
+#define DEF_LABEL(label) emit_label_def(label, s)
+
 void assign_class::code(ostream &s) {
 }
 
@@ -892,15 +902,45 @@ void dispatch_class::code(ostream &s) {
 }
 
 void cond_class::code(ostream &s) {
+	int label_then = newLabel();
+	int label_else = newLabel();
+
+	pred->code(s);
+	emit_load_bool(T1, falsebool, s);
+	emit_beq(ACC, T1, label_else, s);
+	DEF_LABEL(label_then);
+		then_exp->code(s);
+	DEF_LABEL(label_else);
+		else_exp->code(s);
 }
 
 void loop_class::code(ostream &s) {
+	int label_beginloop = newLabel();
+	int label_endloop = newLabel();
+
+	// Loop begin.
+	DEF_LABEL(label_beginloop);
+
+	// Whether condition is true.
+	pred->code(s);
+	emit_load_bool(T1, falsebool, s);
+	emit_beq(ACC, T1, label_endloop, s);
+
+	// Loop
+	body->code(s);
+
+	// Jump back. One iter finished.
+	emit_branch(label_beginloop, s);
+	DEF_LABEL(label_endloop);
 }
 
 void typcase_class::code(ostream &s) {
 }
 
 void block_class::code(ostream &s) {
+	for (int i = body->first(); i = body->more(i); i = body->next(i)){
+		body->nth(i)->code(s);
+	}
 }
 
 void let_class::code(ostream &s) {
@@ -950,12 +990,19 @@ void divide_class::code(ostream &s) {
 	emit_store_int(T1, ACC, s);
 }
 
+// Negate
 void neg_class::code(ostream &s) {
+	e1->code(s);
+	emit_neg(ACC, ACC, s);
+}
+
+// Not
+void comp_class::code(ostream &s) {
 }
 
 void lessThanCommon(Expression e1, Expression e2, ostream& s, const bool eq){
-	label_cnt ++; 	int label_isles = label_cnt; 
-	label_cnt ++;	int label_endif = label_cnt;
+	int label_isles = newLabel() ;
+	int label_endif = newLabel();
 	arith_common(e1, e2, s);
 	if (eq){
 		emit_blt(T1, T2, label_isles, s);
@@ -966,10 +1013,10 @@ void lessThanCommon(Expression e1, Expression e2, ostream& s, const bool eq){
 	emit_load_bool(ACC, falsebool, s);
 	emit_branch(label_endif, s);
 	// Then branch. T1 <(=) T2.
-	emit_label_def(label_isles, s);
+	DEF_LABEL(label_isles);
 	emit_load_bool(ACC, truebool, s);
 	// Endif.
-	emit_label_def(label_endif, s);
+	DEF_LABEL(label_endif);
 }
 
 void lt_class::code(ostream &s) {
@@ -981,7 +1028,7 @@ void leq_class::code(ostream &s) {
 }
 
 void eq_class::code(ostream &s) {
-	label_cnt ++; 	int label_ptreq = label_cnt;
+	int label_ptreq = newLabel();
 
 	arith_common(e1, e2, s);
 	// See this usage of function equality_test in 
@@ -993,11 +1040,8 @@ void eq_class::code(ostream &s) {
 	emit_beq(T1, T2, label_ptreq, s);
 		// Call eq test.
 		emit_jal("equality_test", s);
-	emit_label_def(label_ptreq, s);
+	DEF_LABEL(label_ptreq);
 	// End of branch.
-}
-
-void comp_class::code(ostream &s) {
 }
 
 void int_const_class::code(ostream& s)  
@@ -1022,8 +1066,8 @@ void new__class::code(ostream &s) {
 }
 
 void isvoid_class::code(ostream &s) {
-	label_cnt ++; 	int label_isvod = label_cnt;
-	label_cnt ++; 	int label_endif = label_cnt;
+	int label_isvod = newLabel();
+	int label_endif = newLabel();
 
 	s << "# Evaluate e1" << endl;
 	e1->code(s);
@@ -1033,11 +1077,11 @@ void isvoid_class::code(ostream &s) {
 	emit_branch(label_endif, s);
 	
 	s << "# e1 is void" << endl;
-	emit_label_def(label_isvod, s);
+	DEF_LABEL(label_isvod);
 	emit_load_bool(ACC, truebool, s);
 
 	s << "# End if" << endl;
-	emit_label_def(label_endif, s);
+	DEF_LABEL(label_endif);
 }
 
 void no_expr_class::code(ostream &s) {
