@@ -1004,7 +1004,7 @@ void neg_class::code(ostream &s) {
 	emit_copy(s);
     emit_load(T1, 3, ACC, s);
     emit_neg(T1, T1, s);
-    emit_store(T1, 3, ACC, s);
+    emit_store_int(T1, 3, ACC, s);
 }
 
 // Not
