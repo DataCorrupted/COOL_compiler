@@ -49,14 +49,15 @@ private:
 	 void build_inheritance_tree();
 	 void set_relations(CgenNodeP nd);
 public:
-	 CgenClassTable(Classes, ostream& str);
-	 void setTagForAllObjects();
-	 const int newTag() {
-	 	tag_cnt_++;
-	 	return tag_cnt_;
-	 }
-	 void code();
-	 CgenNodeP root();
+	CgenClassTable(Classes, ostream& str);
+	void setTagForAllObjects();
+	const int newTag() {
+		tag_cnt_++;
+		return tag_cnt_;
+	}
+	void code();
+	const CgenNodeP root();
+	const CgenNodeP getNodeWithTag(const unsigned int);
 };
 
 
@@ -77,6 +78,8 @@ public:
 			CgenClassTableP class_table);
 
 	void collectFeatures();
+	// Generate a proto tpye code for this object.
+	void codeProtoTypeObj(ostream&);
 
 	const std::map<Symbol, Method>& getMethodMap() const { return method_map_; }
 	const std::map<Symbol, Attribute>& getAttrMap() const { return attr_map_; }

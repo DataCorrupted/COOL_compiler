@@ -892,27 +892,103 @@ void CgenClassTable::codeClassNameTab() const{
 }
 
 void CgenClassTable::codeClassObjTab() const{
-	;
+	str << CLASSOBJTAB << LABEL;
+	CgenNode* cur_node;
+	for(List<CgenNode> *l = nds; l; l = l->tl()){
+		cur_node = l->hd();
+		str << WORD; emit_protobj_ref(cur_node->get_name(), str); str << endl;
+		str << WORD; emit_init_ref(cur_node->get_name(), str); str << endl;
+	}
 }
 
 void CgenClassTable::codeDispatchTable() const{
-	;
+	CgenNode* cur_node;
+	// For each node(Class)
+	for(List<CgenNode> *l = nds; l; l = l->tl()){
+		cur_node = l->hd();
+		const std::map<Symbol, Method>& method_map = cur_node->getMethodMap();
+
+		emit_disptable_ref(cur_node->get_name(), str); str << endl;
+		// For each method
+		for (std::map<Symbol, Method>::const_iterator iter = method_map.begin();
+		  iter != method_map.end();
+		  ++iter){
+		  	Method m = iter->second;
+			str << WORD; 
+			emit_method_ref(cur_node->get_name(), m->getName(), str); 
+			str << endl;	
+		}
+	}
 }
 
 void CgenClassTable::codeProtoTypeObj() const{
-	;
+	CgenNode* cur_node;
+	for (List<CgenNode> *l = nds; l; l = l->tl()){
+		cur_node = l->hd();
+		cur_node->codeProtoTypeObj(str);
+	}
 }
 
-CgenNodeP CgenClassTable::root()
-{
-	 return probe(Object);
+const CgenNodeP CgenClassTable::root() { return probe(Object); };
+const CgenNodeP CgenClassTable::getNodeWithTag(const unsigned int tag){
+	CgenNodeP cur_node;
+	for(List<CgenNode> *l = nds; l; l = l->tl()){
+		cur_node = l->hd();
+		if (cur_node->getTag() == tag){
+			return cur_node;
+		}
+	}
+	return NULL;
 }
-
 ///////////////////////////////////////////////////////////////////////
 //
 // CgenNode methods
 //
 ///////////////////////////////////////////////////////////////////////
+
+void CgenNode::codeProtoTypeObj(ostream& str) {
+	// Word -1: GC word.
+	str << WORD << -1 << endl;
+	emit_protobj_ref(name, str); str << LABEL;
+
+	// Word 0: Tag.
+	str << WORD << tag_ << endl;
+
+	// Word 1: Size.
+	str << WORD << DEFAULT_OBJFIELDS + attr_map_.size() << endl;
+
+	// Word 2: Dispatch Table
+	emit_disptable_ref(name, str);
+
+	// Word 3-n: Attribute
+	for (std::map<Symbol, Attribute>::iterator iter = attr_map_.begin();
+	  iter != attr_map_.end();
+	  ++ iter){
+		str << WORD;
+		Attribute a = iter->second;
+		// Three primitive type has the following default value:
+		// Int: 0
+		if (a->type_decl == Int){
+			IntEntry* int_entry = inttable.lookup_string("0");
+			int_entry->code_ref(str);
+		
+		// String: ""
+		} else if (a->type_decl == Bool){
+			BoolConst bool_const = BoolConst(false);
+			bool_const.code_ref(str);
+		
+		// Bool: false
+		} else if (a->type_decl == Str){
+			StringEntry* str_entry = stringtable.lookup_string("");
+			str_entry->code_ref(str);
+
+		// Last case: Set it to void.		
+		} else {
+			str << 0;
+		}
+		str << endl;
+	}
+}
 
 CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 	 class__class((const class__class &) *nd),
