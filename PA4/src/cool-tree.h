@@ -49,7 +49,7 @@ class Feature_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
-
+   virtual const bool isAttribute() const = 0;
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -161,6 +161,7 @@ public:
    }
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
+   const Features getFeatures() const { return features; };
 
 #ifdef Class__SHARED_EXTRAS
    Class__SHARED_EXTRAS
@@ -172,6 +173,7 @@ public:
 
 
 // define constructor - method
+typedef class method_class *Method;
 class method_class : public Feature_class {
 public:
    Symbol name;
@@ -187,6 +189,8 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
+   const bool isAttribute() const { return false; }
+   const Symbol getName() const { return name; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -198,6 +202,7 @@ public:
 
 
 // define constructor - attr
+typedef class attr_class *Attribute;
 class attr_class : public Feature_class {
 public:
    Symbol name;
@@ -211,6 +216,8 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
+   const bool isAttribute() const { return true; };
+   const Symbol getName() const { return name; };
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
