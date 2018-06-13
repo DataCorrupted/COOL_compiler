@@ -1156,12 +1156,23 @@ int newLabel(){
 #define DEF_LABEL(label) emit_label_def(label, s)
 
 void assign_class::code(ostream &s) {
+    // Eval expression
+    std::cerr << name << std::endl;
+
+	expr->code(s);
+	emit_push(ACC,s);
+
+	// TODO: get label of name
+	// TODO: emit_ la
+
 }
 
 void static_dispatch_class::code(ostream &s) {
+	if (cgen_debug)  s << "static_dispatch called" << endl;
 }
 
 void dispatch_class::code(ostream &s) {
+    if (cgen_debug)  s << "dispatch called" << endl;
 }
 
 void cond_class::code(ostream &s) {
