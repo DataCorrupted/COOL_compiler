@@ -37,6 +37,8 @@ private:
 	void codeClassObjTab() const;
 	void codeDispatchTable() const;
 	void codeProtoTypeObj() const;
+	void codeObjectInit() const ;
+	void codeClassMethod() const ;
 
 // The following creates an inheritance graph from
 // a list of classes.  The graph is implemented as
@@ -78,9 +80,11 @@ public:
 			CgenClassTableP class_table);
 
 	void collectFeatures();
+	void codeDispatchTable(ostream&) const;
 	// Generate a proto tpye code for this object.
-	void codeProtoTypeObj(ostream&);
-
+	void codeProtoTypeObj(ostream&) const;
+	void codeObjectInit(ostream&) const;
+	void codeClassMethod(ostream&) const;
 	const std::map<Symbol, Method>& getMethodMap() const { return method_map_; }
 	const std::map<Symbol, Attribute>& getAttrMap() const { return attr_map_; }
 

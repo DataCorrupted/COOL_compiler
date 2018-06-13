@@ -196,6 +196,7 @@ public:
    const Symbol getName() const { return name; }
    void setNative(Symbol s) { native = s; }
    const Symbol getNative() const { return native; }
+   void codeMethod(ostream&) const;
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS

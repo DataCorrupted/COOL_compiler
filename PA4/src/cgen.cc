@@ -627,9 +627,9 @@ CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
 
 	setTagForAllObjects();
 
-	stringclasstag = probe(Str)->getTag(); /* Change to your String class tag here */;
-	intclasstag =    probe(Int)->getTag(); /* Change to your Int class tag here */;
-	boolclasstag =   probe(Bool)->getTag(); /* Change to your Bool class tag here */;
+	stringclasstag = probe(Str)->getTag();
+	intclasstag =    probe(Int)->getTag();
+	boolclasstag =   probe(Bool)->getTag();
 
 	code();
 	exitscope();
@@ -844,12 +844,6 @@ void CgenClassTable::code()
 	if (cgen_debug) cout << "coding constants" << endl;
 	code_constants();
 
-//                 Add your code to emit
-//                   - prototype objects
-//                   - class_nameTab
-//                   - dispatch tables
-//
-
 	if (cgen_debug) { cout << "#coding class_nameTab" << endl; }
 	codeClassNameTab();
 
@@ -862,9 +856,15 @@ void CgenClassTable::code()
 	if (cgen_debug) { cout << "#coding prototype objects" << endl; }
 	codeProtoTypeObj();
 
-
 	if (cgen_debug) cout << "coding global text" << endl;
 	code_global_text();
+
+	if (cgen_debug) { cout << "coding object init " << endl; }
+	codeObjectInit();
+
+	if (cgen_debug) { cout << "coding each method" << endl; }	
+	codeClassMethod();
+
 
 //                 Add your code to emit
 //                   - object initializer
@@ -895,30 +895,25 @@ void CgenClassTable::codeClassObjTab() const{
 }
 
 void CgenClassTable::codeDispatchTable() const{
-	CgenNode* cur_node;
-	// For each node(Class)
 	for(List<CgenNode> *l = nds; l; l = l->tl()){
-		cur_node = l->hd();
-		const std::map<Symbol, Method>& method_map = cur_node->getMethodMap();
-
-		emit_disptable_ref(cur_node->get_name(), str); str << LABEL;
-		// For each method
-		for (std::map<Symbol, Method>::const_iterator iter = method_map.begin();
-		  iter != method_map.end();
-		  ++iter){
-		  	Method m = iter->second;
-			str << WORD; 
-			emit_method_ref(m->getNative(), m->getName(), str); 
-			str << endl;	
-		}
+		l->hd()->codeDispatchTable(str);
 	}
 }
 
 void CgenClassTable::codeProtoTypeObj() const{
-	CgenNode* cur_node;
 	for (List<CgenNode> *l = nds; l; l = l->tl()){
-		cur_node = l->hd();
-		cur_node->codeProtoTypeObj(str);
+		l->hd()->codeProtoTypeObj(str);
+	}
+}
+
+void CgenClassTable::codeObjectInit() const {
+	for (List<CgenNode> *l = nds; l; l = l->tl()){
+		l->hd()->codeObjectInit(str);
+	}
+}
+void CgenClassTable::codeClassMethod() const {
+	for (List<CgenNode> *l = nds; l; l = l->tl()){
+		l->hd()->codeClassMethod(str);
 	}
 }
 
@@ -939,7 +934,19 @@ const CgenNodeP CgenClassTable::getNodeWithTag(const unsigned int tag){
 //
 ///////////////////////////////////////////////////////////////////////
 
-void CgenNode::codeProtoTypeObj(ostream& str) {
+void CgenNode::codeDispatchTable(ostream& str) const {
+	emit_disptable_ref(name, str); str << LABEL;
+	// For each method
+	for (std::map<Symbol, Method>::const_iterator iter = method_map_.begin();
+	  iter != method_map_.end();
+	  ++iter){
+	  	Method m = iter->second;
+		str << WORD; 
+		emit_method_ref(m->getNative(), m->getName(), str); 
+		str << endl;	
+	}
+}
+void CgenNode::codeProtoTypeObj(ostream& str) const {
 	// Word -1: GC word.
 	str << WORD << -1 << endl;
 	emit_protobj_ref(name, str); str << LABEL;
@@ -954,7 +961,7 @@ void CgenNode::codeProtoTypeObj(ostream& str) {
 	str << WORD; emit_disptable_ref(name, str); str << endl;
 
 	// Word 3-n: Attribute
-	for (std::map<Symbol, Attribute>::iterator iter = attr_map_.begin();
+	for (std::map<Symbol, Attribute>::const_iterator iter = attr_map_.begin();
 	  iter != attr_map_.end();
 	  ++ iter){
 		str << WORD;
@@ -983,6 +990,27 @@ void CgenNode::codeProtoTypeObj(ostream& str) {
 	}
 }
 
+void CgenNode::codeObjectInit(ostream& str) const{
+	emit_init_ref(name, str); 	str << LABEL;
+	// Emit code
+	;
+}
+void CgenNode::codeClassMethod(ostream& str) const{
+	for (std::map<Symbol, Method>::const_iterator iter = method_map_.begin();
+	  iter != method_map_.end();
+	  ++iter){
+	  	Method m = iter->second;
+		if (m->getNative() == name){
+			m->codeMethod(str);			
+		}
+	}
+}
+
+void method_class::codeMethod(ostream& str) const{
+	emit_method_ref(native, name, str); 	str << LABEL;
+	// Emit code.
+	;
+}
 CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 	 class__class((const class__class &) *nd),
 	 parentnd(NULL),
