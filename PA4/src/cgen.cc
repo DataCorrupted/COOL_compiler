@@ -1161,16 +1161,25 @@ int newLabel(){
 
 #define DEF_LABEL(label) emit_label_def(label, s)
 
+//
+// * call for functions that is defined outside of this class;
+// * use of global variables everywhere;
+// * yet const correctness is nowhere to be found;
+// * memory leaks like Chernobyl;
+// * use of unsafe C functions when you have std;
+// * forget about naming rules too when you have snake cased class name
+//
+// Let's make it polite: 
+//
+//      such code should be posted on pornhub instead of github. :)
+//
 void assign_class::code(ostream &s) {
     // Eval expression
-    std::cerr << name << std::endl;
-
 	expr->code(s);
-	emit_push(ACC,s);
-
-	// TODO: get label of name
-	// TODO: emit_ la
-
+	// Get the location(in terms of register).
+	ObjectLocation* obj_loc = env.lookup(name);
+	// Copy it to 
+	emit_store(ACC, obj_loc->getOffset(), obj_loc->getReg(), s);
 }
 
 void static_dispatch_class::code(ostream &s) {

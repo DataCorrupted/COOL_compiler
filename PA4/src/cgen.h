@@ -114,6 +114,6 @@ private:
 	int offset_;
 public:
 	ObjectLocation(char* c, int o): reg_(c), offset_(o) {;};
-	const char* getReg() const { return reg_; };
+	char* getReg() const { return reg_; };
 	const int getOffset() const { return offset_; };
 };
