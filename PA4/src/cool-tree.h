@@ -46,10 +46,16 @@ public:
 typedef class Feature_class *Feature;
 
 class Feature_class : public tree_node {
+private:
+   // Native refers to the object where the method
+   // is initially definied.
+   Symbol native_;
 public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
    virtual const bool isAttribute() const = 0;
+   void setNative(Symbol s) { native_ = s; }
+   const Symbol getNative() const { return native_; }
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -176,9 +182,6 @@ public:
 typedef class method_class *Method;
 class method_class : public Feature_class {
 public:
-   // Native refers to the object where the method
-   // is initially definied.
-   Symbol native;
    Symbol name;
    Formals formals;
    Symbol return_type;
@@ -194,8 +197,6 @@ public:
    void dump(ostream& stream, int n);
    const bool isAttribute() const { return false; }
    const Symbol getName() const { return name; }
-   void setNative(Symbol s) { native = s; }
-   const Symbol getNative() const { return native; }
    void codeMethod(ostream&) const;
 
 #ifdef Feature_SHARED_EXTRAS
@@ -224,6 +225,7 @@ public:
    void dump(ostream& stream, int n);
    const bool isAttribute() const { return true; };
    const Symbol getName() const { return name; };
+   const Expression getInit() const { return init; };
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS

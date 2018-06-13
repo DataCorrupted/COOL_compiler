@@ -25,10 +25,14 @@
 #include "cgen.h"
 #include "cgen_gc.h"
 #include <stack>
+#include <typeinfo>
+#include <sstream>
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
 
 int local_var_cnt = 1;
+SymbolTable<Symbol, Location> env;
+CgenNodeP cur_class;
 
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
@@ -352,6 +356,22 @@ static void emit_gc_check(char *source, ostream &s)
 {
 	if (source != (char*)A1) emit_move(A1, source, s);
 	s << JAL << "_gc_check" << endl;
+}
+
+static void emitCalleeStart(ostream& str) {
+	emit_addiu(SP, SP, -3 * WORD_SIZE, str);
+	emit_store(FP, 3, SP, str);
+	emit_store(SELF, 2, SP, str);
+	emit_store(RA, 1, SP, str);
+	emit_addiu(FP, SP, WORD_SIZE, str);
+	emit_move(SELF, ACC, str);
+}
+static void emitCalleeReturn(const int arg_cnt, ostream& str) {
+	emit_load(FP, 3, SP, str);
+	emit_load(SELF, 2, SP, str);
+	emit_load(RA, 1, SP, str);
+	emit_addiu(SP, SP, (3 + arg_cnt) * WORD_SIZE, str);
+	emit_return(str);
 }
 
 
@@ -955,17 +975,15 @@ void CgenNode::codeProtoTypeObj(ostream& str) const {
 	str << WORD << tag_ << endl;
 
 	// Word 1: Size.
-	str << WORD << DEFAULT_OBJFIELDS + attr_map_.size() << endl;
+	str << WORD << DEFAULT_OBJFIELDS + attr_vec_.size() << endl;
 
 	// Word 2: Dispatch Table
 	str << WORD; emit_disptable_ref(name, str); str << endl;
 
 	// Word 3-n: Attribute
-	for (std::map<Symbol, Attribute>::const_iterator iter = attr_map_.begin();
-	  iter != attr_map_.end();
-	  ++ iter){
+	for (int i=0; i<attr_vec_.size(); i++){
 		str << WORD;
-		Attribute a = iter->second;
+		Attribute a = attr_vec_[i];
 		// Three primitive type has the following default value:
 		// Int: 0
 		if (a->type_decl == Int){
@@ -992,24 +1010,73 @@ void CgenNode::codeProtoTypeObj(ostream& str) const {
 
 void CgenNode::codeObjectInit(ostream& str) const{
 	emit_init_ref(name, str); 	str << LABEL;
-	// Emit code
-	;
-}
-void CgenNode::codeClassMethod(ostream& str) const{
-	for (std::map<Symbol, Method>::const_iterator iter = method_map_.begin();
-	  iter != method_map_.end();
-	  ++iter){
-	  	Method m = iter->second;
-		if (m->getNative() == name){
-			m->codeMethod(str);			
+	// Callee startup.
+	emitCalleeStart(str);
+
+	// Init parent first. Only Object has no parent.
+	if (name != Object){
+		str << JAL; emit_init_ref(parentnd->get_name(), str); str << endl;
+	}
+
+	// Init each attribute defined in this class,
+	// as inherited attribute has been defined.
+	for (int i=0; i<attr_vec_.size(); i++){
+		Attribute a = attr_vec_[i];
+		// This attribute is not native defined but inherited.
+		// It should've been inited in a parent class,
+		// so we don't care about it.
+		if (a->getNative() != name){ continue; }
+
+		// If there is no init expression, there is no need
+		// to add anything, just use the default is enought.
+		if (typeid(*(a->getInit())) != typeid(no_expr_class)) {
+			a->getInit()->code(str);
+			emit_store(ACC, i+3, SELF, str);
 		}
 	}
+
+	// Return inited object.
+	emit_move(ACC, SELF, str);
+
+	// Callee quit procedure. There is no arg for init procedure.
+	emitCalleeReturn(0, str);
+	
+}
+void CgenNode::codeClassMethod(ostream& str) const{
+	cur_node = this;
+	env.enterscope();
+
+	// Init each attribute.
+	for (int i=0; i<features->len(); i++){
+		Feature f = features->nth(i);
+
+		// This is an attribute. Continue.
+		if (f->isAttribute()){ continue; }
+
+		// Add to attribute table.
+		Method m = dynamic_cast<Method>(f);
+		// Code attribute
+		m->codeMethod(str);
+	}
+
+	env.exitscope();
 }
 
 void method_class::codeMethod(ostream& str) const{
-	emit_method_ref(native, name, str); 	str << LABEL;
-	// Emit code.
-	;
+	// Mark a label.
+	emit_method_ref(getNative(), name, str); 	str << LABEL;
+
+	emitCalleeStart(str);
+	env.enterscope();
+
+	for (int i=formals.first(); formals->more(i); i=formals.next(i)){
+		;
+	}
+	// Evaluate the expression inside.
+	expr->code(str);
+
+	env.exitscope();
+	emitCalleeReturn(formals.len(), str);
 }
 CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 	 class__class((const class__class &) *nd),
@@ -1025,18 +1092,19 @@ void CgenNode::collectFeatures(){
 	// Or we "stole" the map from the parent.
 	if (parentnd){
 		method_map_ = std::map<Symbol, Method>(parentnd->getMethodMap());
-		attr_map_ = std::map<Symbol, Attribute>(parentnd->getAttrMap());
+		attr_vec_ = std::vector<Attribute>(parentnd->getAttrVec());
 	}
 
 	Features features = this->getFeatures();
 
 	for (int i=0; i<features->len(); i++){
 		Feature f = features->nth(i);
+		f->setNative(name);
 
 		// Add to attribute table.
 		if (f->isAttribute()){
 			Attribute a  = dynamic_cast<Attribute>(f);
-			attr_map_.insert(std::pair<Symbol, Attribute>(a->getName(), a));
+			attr_vec_.push_back(a);
 
 		// Add to method table.
 		} else {
@@ -1044,7 +1112,6 @@ void CgenNode::collectFeatures(){
 			// Record which object does this method belong to.
 			// This will not change, unless it's override by 
 			// inherted method.
-			m->setNative(name);
 			method_map_[m->getName()] = m;
 		}
 	}
@@ -1266,6 +1333,20 @@ void bool_const_class::code(ostream& s)
 }
 
 void new__class::code(ostream &s) {
+	if (type_name == SELF_TYPE){
+		// TODO
+		// Need environment to tell us where are we.
+	} else {
+		// Get object proto type.
+		emit_partial_load_address(ACC, s);
+		emit_protobj_ref(type_name, s);
+		s << endl;
+		
+		// Copy it to heap.
+		emit_copy(s);
+
+		s << JAL; emit_init_ref(type_name, s); s << endl;
+	}
 }
 
 void isvoid_class::code(ostream &s) {
