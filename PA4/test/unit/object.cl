@@ -5,11 +5,19 @@ class A{
 	method0(): Int {
 		1
 	};
+	method1(): Int{
+		2
+	};
 };
 
 class B inherits A{
+	a: A;
 	another_base: Int;
 
+	-- Overload --
+	method0(): Int{
+		2
+	};
 	another_method(): Int{
 		2
 	};
@@ -17,7 +25,8 @@ class B inherits A{
 
 class C inherits B{
 	final_base: Int;
-
+	b: B;
+	c: C;
 	fianl_method(): Int{
 		3
 	};
@@ -26,6 +35,12 @@ class C inherits B{
 class D inherits B{
 	copy_base: Int;
 
+	method0(): Int{
+		3
+	};
+	another_method(): Int{
+		3
+	};
 	copy_method(): Int{
 		4
 	};

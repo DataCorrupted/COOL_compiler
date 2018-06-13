@@ -131,15 +131,9 @@ BoolConst truebool(TRUE);
 //
 //*********************************************************
 
-void program_class::cgen(ostream &os) 
-{
-	// spim wants comments to start with '#'
-	os << "# start of generated code\n";
-
+void program_class::cgen(ostream &os) {
 	initialize_constants();
 	CgenClassTable *codegen_classtable = new CgenClassTable(classes,os);
-
-	os << "\n# end of generated code\n";
 }
 
 
@@ -407,8 +401,7 @@ void StringEntry::code_def(ostream& s, int stringclasstag)
 			<< WORD << (DEFAULT_OBJFIELDS + STRING_SLOTS + (len+4)/4) << endl // size
 			<< WORD;
 
-
- /***** Add dispatch information for class String ******/
+ 			emit_disptable_ref(Str, s);
 
 			s << endl;                                              // dispatch table
 			s << WORD;  lensym->code_ref(s);  s << endl;            // string length
@@ -450,7 +443,7 @@ void IntEntry::code_def(ostream &s, int intclasstag)
 			<< WORD << (DEFAULT_OBJFIELDS + INT_SLOTS) << endl  // object size
 			<< WORD; 
 
- /***** Add dispatch information for class Int ******/
+ 			emit_disptable_ref(Int, s);
 
 			s << endl;                                          // dispatch table
 			s << WORD << str << endl;                           // integer value
@@ -494,7 +487,7 @@ void BoolConst::code_def(ostream& s, int boolclasstag)
 			<< WORD << (DEFAULT_OBJFIELDS + BOOL_SLOTS) << endl   // object size
 			<< WORD;
 
- /***** Add dispatch information for class Bool ******/
+ 			emit_disptable_ref(Bool, s);
 
 			s << endl;                                            // dispatch table
 			s << WORD << val << endl;                             // value (0 or 1)
@@ -908,14 +901,14 @@ void CgenClassTable::codeDispatchTable() const{
 		cur_node = l->hd();
 		const std::map<Symbol, Method>& method_map = cur_node->getMethodMap();
 
-		emit_disptable_ref(cur_node->get_name(), str); str << endl;
+		emit_disptable_ref(cur_node->get_name(), str); str << LABEL;
 		// For each method
 		for (std::map<Symbol, Method>::const_iterator iter = method_map.begin();
 		  iter != method_map.end();
 		  ++iter){
 		  	Method m = iter->second;
 			str << WORD; 
-			emit_method_ref(cur_node->get_name(), m->getName(), str); 
+			emit_method_ref(m->getNative(), m->getName(), str); 
 			str << endl;	
 		}
 	}
@@ -958,7 +951,7 @@ void CgenNode::codeProtoTypeObj(ostream& str) {
 	str << WORD << DEFAULT_OBJFIELDS + attr_map_.size() << endl;
 
 	// Word 2: Dispatch Table
-	emit_disptable_ref(name, str);
+	str << WORD; emit_disptable_ref(name, str); str << endl;
 
 	// Word 3-n: Attribute
 	for (std::map<Symbol, Attribute>::iterator iter = attr_map_.begin();
@@ -1020,7 +1013,11 @@ void CgenNode::collectFeatures(){
 		// Add to method table.
 		} else {
 			Method m = dynamic_cast<Method>(f);
-			method_map_.insert(std::pair<Symbol, Method>(m->getName(), m));
+			// Record which object does this method belong to.
+			// This will not change, unless it's override by 
+			// inherted method.
+			m->setNative(name);
+			method_map_[m->getName()] = m;
 		}
 	}
 }

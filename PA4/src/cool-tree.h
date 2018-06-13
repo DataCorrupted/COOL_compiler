@@ -176,6 +176,9 @@ public:
 typedef class method_class *Method;
 class method_class : public Feature_class {
 public:
+   // Native refers to the object where the method
+   // is initially definied.
+   Symbol native;
    Symbol name;
    Formals formals;
    Symbol return_type;
@@ -191,6 +194,8 @@ public:
    void dump(ostream& stream, int n);
    const bool isAttribute() const { return false; }
    const Symbol getName() const { return name; }
+   void setNative(Symbol s) { native = s; }
+   const Symbol getNative() const { return native; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
