@@ -1183,11 +1183,49 @@ void assign_class::code(ostream &s) {
 }
 
 void static_dispatch_class::code(ostream &s) {
-	if (cgen_debug)  s << "static_dispatch called" << endl;
+
+	if (cgen_debug)  s << "# static_dispatch called" << endl;
+
+
 }
 
 void dispatch_class::code(ostream &s) {
-    if (cgen_debug)  s << "dispatch called" << endl;
+    if (cgen_debug)  s << "# dispatch called" << endl;
+    // create new label
+    int label_exec = newLabel();
+
+    // deal with all args and push to stack (a1-aN)
+	for (int i = 0; i < actual->len(); i++){
+		Expression arg = actual->nth(i);
+		// eval the arg and push to stack
+		arg->code(s);
+		emit_push(ACC,s);
+	}
+
+    // move s0 to a0 (as the first parameter)
+	emit_move(ACC,SELF,s);
+
+	// Abort
+	// if a0 is $0, abort and call dispatch_abort
+    emit_bne(ACC,ZERO,label_exec,s);
+    // load error message
+    // TODO(jianxiong): what's the predefined filename...
+    StringEntry * err_msg = stringtable.lookup_string("");
+    emit_partial_load_address(ACC,s);
+    err_msg->code_ref(s);
+    s << endl;
+    // syscall 9
+    emit_load_imm(T1,9,s);
+    emit_jal("_dispatch_abort",s);
+
+    // Valid: preceed to exec
+    emit_label_def(label_exec,s);
+
+    // get the dispatch table of object at $a0
+    emit_load(T1,2,ACC,s);
+    // get the function offset
+    
+
 }
 
 void cond_class::code(ostream &s) {
