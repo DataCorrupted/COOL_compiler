@@ -1046,17 +1046,24 @@ void CgenNode::codeClassMethod(ostream& str) const{
 	cur_class = this;
 	env.enterscope();
 
-	// Init each attribute.
-	for (int i=0; i<features->len(); i++){
-		Feature f = features->nth(i);
+	// Add all attributes to current scope.
+	for (int i=0; i<attr_vec_.size(); i++){
+		env.addid(
+			attr_vec_[i]->getName(),  						// Key
+			ObjectLocation(SELF, DEFAULT_OBJFIELDS + i) 	// Value
+		);
+	}
 
-		// This is an attribute. Continue.
-		if (f->isAttribute()){ continue; }
-
-		// Add to attribute table.
-		Method m = dynamic_cast<Method>(f);
-		// Code attribute
-		m->codeMethod(str);
+	// Code each method one by one. Skip those inherited ones.
+	for (std::map<Symbol, Method>::const_iterator iter = method_map_.begin();
+	  iter != method_map_.end();
+	  ++iter){	
+		Method m = iter->second;
+		// Code method only when this method is defined by myself,
+		// or it would've been coded by it's parent.
+		if (m->getNative == name){
+			m->codeMethod(str);
+		}
 	}
 
 	env.exitscope();
@@ -1066,15 +1073,22 @@ void method_class::codeMethod(ostream& str) const{
 	// Mark a label.
 	emit_method_ref(getNative(), name, str); 	str << LABEL;
 
+	// Prepare to enter this function and create a new scope.
 	emitCalleeStart(str);
 	env.enterscope();
 
+	// Add all formals.
 	for (int i=formals->first(); formals->more(i); i=formals->next(i)){
-		;
+		env.addid(
+			formals->nth(i)->get_name(), 								// Key
+			ObjectLocation(FP, FRAME_OFFSET + formals->len() - i + 1)	// Value
+		);
 	}
+
 	// Evaluate the expression inside.
 	expr->code(str);
 
+	// Exit scope and reutrn this function.
 	env.exitscope();
 	emitCalleeReturn(formals->len(), str);
 }
@@ -1191,6 +1205,11 @@ void block_class::code(ostream &s) {
 }
 
 void let_class::code(ostream &s) {
+	env.addid(
+		identifier,				// Key
+		ObjectLocation(SP, -local_var_cnt) 	// Value
+	);
+	local_var_cnt ++;
 }
 
 // Notice that arith are based on Int type and thus need to
