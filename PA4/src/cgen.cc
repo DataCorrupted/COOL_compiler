@@ -31,8 +31,8 @@ extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
 
 int local_var_cnt = 1;
-SymbolTable<Symbol, Location> env;
-CgenNodeP cur_class;
+SymbolTable<Symbol, ObjectLocation> env;
+const CgenNode* cur_class;
 
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
@@ -1043,7 +1043,7 @@ void CgenNode::codeObjectInit(ostream& str) const{
 	
 }
 void CgenNode::codeClassMethod(ostream& str) const{
-	cur_node = this;
+	cur_class = this;
 	env.enterscope();
 
 	// Init each attribute.
@@ -1069,14 +1069,14 @@ void method_class::codeMethod(ostream& str) const{
 	emitCalleeStart(str);
 	env.enterscope();
 
-	for (int i=formals.first(); formals->more(i); i=formals.next(i)){
+	for (int i=formals->first(); formals->more(i); i=formals->next(i)){
 		;
 	}
 	// Evaluate the expression inside.
 	expr->code(str);
 
 	env.exitscope();
-	emitCalleeReturn(formals.len(), str);
+	emitCalleeReturn(formals->len(), str);
 }
 CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 	 class__class((const class__class &) *nd),
