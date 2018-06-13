@@ -1045,6 +1045,12 @@ void CgenNode::codeObjectInit(ostream& str) const{
 	
 }
 void CgenNode::codeClassMethod(ostream& str) const{
+	// We don't generate code for primitive type.
+	if (name == Object || 
+	  name == Str || name == Int || name == Bool ||
+	  name == IO){
+		return;
+	}
 	cur_class = this;
 	env.enterscope();
 
@@ -1212,14 +1218,17 @@ void typcase_class::code(ostream &s) {
 }
 
 void block_class::code(ostream &s) {
-	for (int i = body->first(); i = body->more(i); i = body->next(i)){
+	s << "\t# Start of block\n";
+	for (int i = body->first(); body->more(i); i = body->next(i)){
 		body->nth(i)->code(s);
 	}
+	s << "\t# End of block\n";
 }
 
 void let_class::code(ostream &s) {
+	s << "\t# Start of let " << identifier->get_string() << "\n";
 	// Init the new object.
-	if (typeid(*init) != typeid(no_expr_class)) {
+	if (typeid(*init) == typeid(no_expr_class)) {
 		// Int: 0
 		if (type_decl == Int){
 			IntEntry* int_entry = inttable.lookup_string("0");
@@ -1257,6 +1266,7 @@ void let_class::code(ostream &s) {
 	// Exit.
 	local_var_cnt --;
 	env.exitscope();
+	s << "\t# End of let " << identifier->get_string() << "\n";
 }
 
 // Notice that arith are based on Int type and thus need to
@@ -1271,7 +1281,7 @@ void arith_common(Expression e1, Expression e2, ostream& s){
 	emit_copy(s);
 	// Take e1.
 	emit_load(T1, 1, SP, s);
-	emit_addiu(SP, SP, WORD_SIZE, s);
+	emit_pop(s);
 	local_var_cnt--;	
 
 	// Move Acc to t2.
@@ -1279,31 +1289,39 @@ void arith_common(Expression e1, Expression e2, ostream& s){
 }
 
 void plus_class::code(ostream &s) {
+	s << "\t# Start of plus. \n";
 	arith_common(e1, e2, s);
 	// Doing the op.
 	emit_addu(T1, T1, T2, s);
 	emit_store_int(T1, ACC, s);
+	s << "\t# End of plus. \n";
 }
 
 void sub_class::code(ostream &s) {
+	s << "\t# Start of subtract. \n";
 	arith_common(e1, e2, s);
 	// Doing the op.
 	emit_sub(T1, T1, T2, s);
 	emit_store_int(T1, ACC, s);
+	s << "\t# End of subtract. \n";
 }
 
 void mul_class::code(ostream &s) {
+	s << "\t# Start of multiplication. \n";
 	arith_common(e1, e2, s);
 	// Doing the op.
 	emit_mul(T1, T1, T2, s);
 	emit_store_int(T1, ACC, s);
+	s << "\t# End of multiplication. \n";
 }
 
 void divide_class::code(ostream &s) {
+	s << "\t# Start of divide. \n";
 	arith_common(e1, e2, s);
 	// Doing the op.
 	emit_div(T1, T1, T2, s);
 	emit_store_int(T1, ACC, s);
+	s << "\t# End of divide. \n";
 }
 
 // Negate.
@@ -1400,8 +1418,23 @@ void bool_const_class::code(ostream& s)
 
 void new__class::code(ostream &s) {
 	if (type_name == SELF_TYPE){
-		// TODO
-		// Need environment to tell us where are we.
+		emit_load(T1, 0, SELF, s);
+		// *8 == <<3
+		emit_sll(T1, T1, 3, s);
+		emit_load_address(T2, CLASSOBJTAB, s);
+		emit_addu(T2, T1, T2, s);
+		// Use stack to temporarily save table address.
+		emit_push(T2, s);
+		// Address for prototype in acc.
+		emit_load(ACC, 0, T2, s);
+		emit_copy(s);
+		// Load table address.
+		emit_load(T2, 1, SP, s);
+		emit_pop(s);
+		// Load init address.
+		emit_load(T2, 1, T2, s);
+		// Init.
+		emit_jalr(T2, s);
 	} else {
 		// Get object proto type.
 		emit_partial_load_address(ACC, s);
