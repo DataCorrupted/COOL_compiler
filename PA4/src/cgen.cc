@@ -1278,23 +1278,29 @@ void let_class::code(ostream &s) {
 	s << "\t# End of let " << identifier->get_string() << "\n";
 }
 
+// TODO: check that all temp register is not using ACC (it's for argu only)
+// TODO: check that all loading object attr is loading from s0
+
 // Notice that arith are based on Int type and thus need to
 // use fetch int.
 void arith_common(Expression e1, Expression e2, ostream& s){
-	// Eval e1.
+	// Eval e1. (the result is stored in a0)
 	e1->code(s);
-	emit_fetch_int(ACC, ACC, s);
+	// push a0 to stack
 	emit_push(ACC, s);
 	local_var_cnt ++;
+	// eval e2
 	e2->code(s);
+    // push a0 to stack
+    emit_push(ACC, s);
 	emit_copy(s);
-	// Take e1.
-	emit_load(T1, 1, SP, s);
+	// Take e2.
+	emit_load(T2, 1, SP, s);
 	emit_pop(s);
-	local_var_cnt--;	
-
-	// Move Acc to t2.
-	emit_fetch_int(T2, ACC, s);
+	// Take e1
+    emit_load(T1, 1, SP, s);
+    emit_pop(s);
+	local_var_cnt--;
 }
 
 void plus_class::code(ostream &s) {
@@ -1477,6 +1483,13 @@ void no_expr_class::code(ostream &s) {
 }
 
 void object_class::code(ostream &s) {
+    std::cout << "# [start]object_class::code" << std::endl;
+	// search for the location (offset to the object)
+	ObjectLocation * loc = env.lookup(name);
+
+	// move the attr to a0
+    emit_load(ACC,loc->getOffset(),SELF,s);
+    std::cout << "# [end]object_class::code" << std::endl;
 }
 
 
