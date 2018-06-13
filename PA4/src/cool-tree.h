@@ -56,6 +56,7 @@ public:
    virtual const bool isAttribute() const = 0;
    void setNative(Symbol s) { native_ = s; }
    const Symbol getNative() const { return native_; }
+   virtual const Symbol getName() const = 0;
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -69,7 +70,7 @@ class Formal_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
-
+   virtual const Symbol getName() const = 0;
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
 #endif
@@ -248,6 +249,7 @@ public:
    }
    Formal copy_Formal();
    void dump(ostream& stream, int n);
+   const Symbol getName() const { return name; } 
 
 #ifdef Formal_SHARED_EXTRAS
    Formal_SHARED_EXTRAS

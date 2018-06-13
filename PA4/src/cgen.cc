@@ -320,10 +320,12 @@ static void emit_copy(ostream& s){
 //
 // Push a register on the stack. The stack grows towards smaller addresses.
 //
-static void emit_push(char *reg, ostream& str)
-{
+static void emit_push(char *reg, ostream& str) {
 	emit_store(reg,0,SP,str);
 	emit_addiu(SP,SP,-4,str);
+}
+static void emit_pop(ostream& str){
+	emit_addiu(SP, SP, 4, str);
 }
 
 //
@@ -1050,7 +1052,7 @@ void CgenNode::codeClassMethod(ostream& str) const{
 	for (int i=0; i<attr_vec_.size(); i++){
 		env.addid(
 			attr_vec_[i]->getName(),  						// Key
-			ObjectLocation(SELF, DEFAULT_OBJFIELDS + i) 	// Value
+			new ObjectLocation(SELF, DEFAULT_OBJFIELDS + i) // Value
 		);
 	}
 
@@ -1061,7 +1063,7 @@ void CgenNode::codeClassMethod(ostream& str) const{
 		Method m = iter->second;
 		// Code method only when this method is defined by myself,
 		// or it would've been coded by it's parent.
-		if (m->getNative == name){
+		if (m->getNative() == name){
 			m->codeMethod(str);
 		}
 	}
@@ -1080,8 +1082,8 @@ void method_class::codeMethod(ostream& str) const{
 	// Add all formals.
 	for (int i=formals->first(); formals->more(i); i=formals->next(i)){
 		env.addid(
-			formals->nth(i)->get_name(), 								// Key
-			ObjectLocation(FP, FRAME_OFFSET + formals->len() - i + 1)	// Value
+			formals->nth(i)->getName(), 						// Key
+			new ObjectLocation(FP, 3 + formals->len() - i + 1)	// Value
 		);
 	}
 
@@ -1205,11 +1207,45 @@ void block_class::code(ostream &s) {
 }
 
 void let_class::code(ostream &s) {
+	// Init the new object.
+	if (typeid(*init) != typeid(no_expr_class)) {
+		// Int: 0
+		if (type_decl == Int){
+			IntEntry* int_entry = inttable.lookup_string("0");
+			emit_load_int(ACC, int_entry, s);
+		
+		// String: ""
+		} else if (type_decl == Bool){
+			BoolConst bool_const = BoolConst(false);
+			emit_load_bool(ACC, bool_const, s);
+		
+		// Bool: false
+		} else if (type_decl == Str){
+			StringEntry* str_entry = stringtable.lookup_string("");
+			emit_load_string(ACC, str_entry, s);
+
+		} else {
+			init->code(s);
+		}
+	} else {
+		init->code(s);
+	}
+
+	// Enter scope and add a new var.
+	env.enterscope();
 	env.addid(
-		identifier,				// Key
-		ObjectLocation(SP, -local_var_cnt) 	// Value
+		identifier,								// Key
+		new ObjectLocation(FP, -local_var_cnt) 	// Value
 	);
 	local_var_cnt ++;
+
+	emit_push(ACC, s);
+	body->code(s);
+	emit_pop(s);
+
+	// Exit.
+	local_var_cnt --;
+	env.exitscope();
 }
 
 // Notice that arith are based on Int type and thus need to
