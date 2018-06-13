@@ -1341,11 +1341,13 @@ void divide_class::code(ostream &s) {
 
 // Negate.
 void neg_class::code(ostream &s) {
-	e1->code(s);
-	emit_neg(ACC, ACC, s);
+	// eval e1: get int object
+    e1->code(s);
 	emit_copy(s);
+	// load value of int object
     emit_load(T1, 3, ACC, s);
     emit_neg(T1, T1, s);
+    // store value back
     emit_store_int(T1, ACC, s);
 }
 
@@ -1483,13 +1485,11 @@ void no_expr_class::code(ostream &s) {
 }
 
 void object_class::code(ostream &s) {
-    std::cout << "# [start]object_class::code" << std::endl;
 	// search for the location (offset to the object)
 	ObjectLocation * loc = env.lookup(name);
 
 	// move the attr to a0
     emit_load(ACC,loc->getOffset(),SELF,s);
-    std::cout << "# [end]object_class::code" << std::endl;
 }
 
 
