@@ -1167,7 +1167,7 @@ int newLabel(){
 // * yet const correctness is nowhere to be found;
 // * memory leaks like Chernobyl;
 // * use of unsafe C functions when you have std;
-// * forget about naming rules too when you have snake cased class name
+// * forget about naming rules too when you have lowercased class name
 //
 // Let's make it polite: 
 //
@@ -1178,7 +1178,7 @@ void assign_class::code(ostream &s) {
 	expr->code(s);
 	// Get the location(in terms of register).
 	ObjectLocation* obj_loc = env.lookup(name);
-	// Copy it to 
+	// Copy it to that location.
 	emit_store(ACC, obj_loc->getOffset(), obj_loc->getReg(), s);
 }
 
