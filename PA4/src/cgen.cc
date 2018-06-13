@@ -1365,11 +1365,12 @@ void comp_class::code(ostream &s) {
 void lessThanCommon(Expression e1, Expression e2, ostream& s, const bool eq){
 	int label_isles = newLabel() ;
 	int label_endif = newLabel();
+	// eval e1, e2 and store to t1 t2
 	arith_common(e1, e2, s);
 	if (eq){
-		emit_blt(T1, T2, label_isles, s);
+        emit_bleq(T1, T2, label_isles, s);
 	} else {
-		emit_bleq(T1, T2, label_isles, s);
+        emit_blt(T1, T2, label_isles, s);
 	}
 	// Else branch.
 	emit_load_bool(ACC, falsebool, s);
