@@ -1,3 +1,5 @@
+-- Tested and passed. --
+-- Jianxiong Cai 14 Jun, 2018 --
 class Main{
 	a: A <- new A;
 	b: B <- new B;
