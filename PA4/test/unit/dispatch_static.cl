@@ -1,35 +1,27 @@
-class Int3 inherits Int2{
-
-	bar2(x: Bool, y:Int): Int{
-		1
-	};
-
-	foo(x: Bool, y:Int): Int{
-		2
-	};
-
-	ba3(x: Bool, y:Int): Int{
-		1
-	};
-};
-
-class Int2{
-	a2: Int;
-
-	foo(x: Bool, y:Int): Int{
-		1
-	};
-};
+-- Tested and passed. --
+-- Jianxiong Cai 14 Jun, 2018 --
 
 class Main{
-	a: Int3 <- new Int3;
+	a: A <- new A;
+	b: B <- new B;
 
-	bar(x: Bool, y:Int): Int{
-		1
-	};
+	cout: IO <- new IO;
 
 	main(): Int{{
-		a@Int2.foo(true,1);
-		0;
+		b.getA();
+		a.getA();
+		b@A.getA();
+		1;
 	}};
+};
+
+class A{
+	a: Int <- 1;
+	cout2: IO <- new IO;
+	getA(): Int {{ cout2.out_string("A.getA get called\n"); a; }};
+};
+
+class B inherits A {
+	incA(): Int {{ a <- a + 1; 10; }};
+	getA(): Int {{ cout2.out_string("B.getA get called\n"); a; }};
 };

@@ -1,20 +1,25 @@
-class Int2{
-	a2: Int;
-
-	foo(x: Bool, y:Int): Int{
-		1
-	};
-};
+-- Tested and passed. --
+-- Jianxiong Cai 14 Jun, 2018 --
 
 class Main{
-	a: Int2;
+	a: A <- new A;
+	b: B <- new B;
 
-	bar(x: Bool, y:Int): Int{
-		1
-	};
+	cout: IO <- new IO;
 
 	main(): Int{{
-		a <- new Int2;
-		a.foo(true,1);
+		b.getA();
+		a.getA();
+		b.getA();
+		1;
 	}};
+};
+
+class A{
+	a: Int <- 1;
+	getA(): Int { a };
+};
+
+class B inherits A {
+	incA(): Int {{ a <- a + 1; 10; }};
 };

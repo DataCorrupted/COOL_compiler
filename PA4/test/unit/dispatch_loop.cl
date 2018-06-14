@@ -1,3 +1,6 @@
+-- Tested and passed. --
+-- Jianxiong Cai 14 Jun, 2018 --
+
 class Main{
 	a: Int <- 1;
 	b: Main;
