@@ -1202,7 +1202,7 @@ void static_dispatch_class::code(ostream &s) {
 }
 
 void dispatch_class::code(ostream &s) {
-    if (cgen_debug)  s << "# dispatch called" << endl;
+    s << "# dispatch called" << endl;
     // create new label
     int label_exec = newLabel();
 
@@ -1214,8 +1214,15 @@ void dispatch_class::code(ostream &s) {
 		emit_push(ACC,s);
 	}
 
-    // move s0 to a0 (as the first parameter)
-	emit_move(ACC,SELF,s);
+	// the first parameter is the object itself
+    if (expr->get_type() == self) {
+		// move s0 to a0 (as the first parameter)
+		emit_move(ACC, SELF, s);
+	}
+	else{
+		// eval the attr name, the attr get loaded to $a0 automatically
+        expr->code(s);
+	}
 
 	// Abort
 	// if a0 is $0, abort and call dispatch_abort
@@ -1240,6 +1247,7 @@ void dispatch_class::code(ostream &s) {
 	for (std::map<Symbol, Method>::const_iterator iter = method_map.begin();
 		 iter != method_map.end();
 		 ++iter){
+	    s << "# checking method: " << iter->first << endl;
 		if (iter->first == name){
 			break;
 		}
