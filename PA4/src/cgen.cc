@@ -1099,7 +1099,7 @@ void method_class::codeMethod(ostream& str) const{
 		env.addid(
 			formal->getName(), 										// Key
 			new ObjectLocation(
-				FP, 3 + formals->len() - i + 1, formal->getType())	// Value
+				FP,  3 + formals->len() - i - 1, formal->getType())	// Value
 		);
 	}
 
