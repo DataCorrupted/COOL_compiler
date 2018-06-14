@@ -1,3 +1,5 @@
+-- Tested and passed. --
+-- Peter Rong 14 Jun, 2018 --
 class A{
 	base0: Int;
 	base1: Int;

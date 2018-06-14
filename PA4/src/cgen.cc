@@ -1105,7 +1105,6 @@ void method_class::codeMethod(ostream& str) const{
 
 	// Evaluate the expression inside.
 	expr->code(str);
-
 	// Exit scope and reutrn this function.
 	env.exitscope();
 	emitCalleeReturn(formals->len(), str);

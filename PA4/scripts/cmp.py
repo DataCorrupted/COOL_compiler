@@ -13,9 +13,11 @@ def compare(file):
 	return result >> 8
 
 if __name__ == "__main__":
-	os.system("./scripts/compile.sh")
+	if ("-n" not in sys.argv):
+		os.system("./scripts/compile.sh")
+	else:
+		os.system("clear")
 	if (len(sys.argv) >= 2):
 		compare(sys.argv[1])
 	else:
 		print("Please provide file for me to test")
-	os.system("rm cgen")
