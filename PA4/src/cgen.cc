@@ -1151,6 +1151,8 @@ void CgenNode::collectFeatures(){
 				if (method_vec_[i]->getName() == m->getName()){
 					method_vec_[i] = m;
 					inherited = true;
+					// No need for further probing.
+					break;
 				} 
 			}
 			if (!inherited){
