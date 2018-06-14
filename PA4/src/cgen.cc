@@ -1243,11 +1243,20 @@ void dispatch_class::code(ostream &s) {
     emit_load(T1,2,ACC,s);
     // get the function offset
 	int func_offset = 0;
-	std::map<Symbol, Method> method_map = cur_class->getMethodMap();
+	Symbol object_name = expr->get_type();
+
+	// get the dispatch table for object
+	std::map<Symbol, Method> method_map;
+	if (object_name == self) {
+		method_map = cur_class->getMethodMap();
+	}
+	else{
+		method_map = class_map[object_name]->getMethodMap();
+	}
+	// search for the target function in the dispatch table
 	for (std::map<Symbol, Method>::const_iterator iter = method_map.begin();
 		 iter != method_map.end();
 		 ++iter){
-	    s << "# checking method: " << iter->first << endl;
 		if (iter->first == name){
 			break;
 		}
