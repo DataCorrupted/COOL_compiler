@@ -4,11 +4,8 @@ class Main{
 	cout : IO <- new IO;
 
 	foo(x: Int, y:Int): Int{{
-		cout.out_string("Main.foo get called with x=");
 		cout.out_int(x);
-		cout.out_string("   y=");
 		cout.out_int(y);
-		cout.out_string("\n");
 		0;	
 	}};
 
@@ -18,7 +15,8 @@ class Main{
 	}};
 
 	main(): Int{{
-		self.foo(200,1);
+		b <- new Main;
+		self.foo(1,2);
 		1;
 	}};
 };
