@@ -34,7 +34,6 @@ int local_var_cnt = 1;
 SymbolTable<Symbol, ObjectLocation> env;
 CgenNode* cur_class;
 std::map<Symbol, CgenNodeP> class_map;
-
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
 // If e : No_type, then no code is generated for e.
@@ -1328,14 +1327,53 @@ void loop_class::code(ostream &s) {
 
 void typcase_class::code(ostream &s) {
 	int label_notvoid = newLabel();
+	int label_endcase = newLabel();
 
 	expr->code(s);
 	// In case of a void match.
 	emit_bne(ACC, ZERO, label_notvoid, s);
 	// Get filename and line number, abort.
-
+		StringEntry *str_entry = 
+			stringtable.lookup_string(cur_class->get_filename()->get_string());
+		emit_load_string(ACC, str_entry, s);
+		emit_load_imm(T1, cur_class->get_line_number(), s);
+		emit_jal("_case_abort2", s);
 	// Not a void match, go on.
 	DEF_LABEL(label_notvoid);
+	
+	emit_push(ACC, s);
+	local_var_cnt ++;
+
+	int label_next = newLabel();
+	int label_curr = -1;
+	for (int i=cases->first(); cases->more(i); i = cases->next(i)){
+		Case c = cases->nth(i);
+
+		// Prepare label.
+		label_curr = label_next;
+		label_next = newLabel();
+		DEF_LABEL(label_curr);
+		// Prepare condition.
+		emit_load(ACC, 1, SP, s);
+		// Current class tag.
+		emit_load(T1, TAG_OFFSET, ACC, s);
+		// Branch's tag.
+		emit_load_imm(T2, class_map[c->getType()]->getTag(), s);
+		// Not a match.
+		emit_bne(T1, T2, label_next, s);
+		// This is a match.
+		c->getExpr()->code(s);
+		emit_branch(label_endcase, s);
+	}
+	// No match found.
+	emit_load(ACC, 1, SP, s);
+	emit_jal("_case_abort", s);
+
+	DEF_LABEL(label_endcase);
+	emit_pop(s);
+
+	local_var_cnt --;
+	emit_pop(s);
 }
 
 void block_class::code(ostream &s) {
