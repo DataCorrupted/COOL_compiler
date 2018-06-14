@@ -10,6 +10,14 @@ class Main{
 			m.print(a);
 		};
 		let b: B in 2;
+
+        let countdown : Int <- 20 in
+			while 0 < countdown loop {
+				countdown <- countdown - 1;
+				self.print(countdown);
+			} pool
+        ;
+        1;
 	}};
 
 	print(a: Int): Int{{
