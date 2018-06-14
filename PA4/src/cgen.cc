@@ -1416,6 +1416,7 @@ void typcase_class::code(ostream &s) {
 		c->getExpr()->code(s);
 		emit_branch(label_endcase, s);
 	}
+    DEF_LABEL(label_next);
 	// No match found.
 	emit_load(ACC, 1, SP, s);
 	emit_jal("_case_abort", s);
