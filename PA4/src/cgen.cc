@@ -1370,8 +1370,6 @@ void typcase_class::code(ostream &s) {
 	emit_jal("_case_abort", s);
 
 	DEF_LABEL(label_endcase);
-	emit_pop(s);
-
 	local_var_cnt --;
 	emit_pop(s);
 }
