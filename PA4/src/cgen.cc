@@ -1297,16 +1297,17 @@ void dispatch_class::code(ostream &s) {
 }
 
 void cond_class::code(ostream &s) {
-	int label_then = newLabel();
 	int label_else = newLabel();
+	int label_endif = newLabel();
 
 	pred->code(s);
 	emit_load_bool(T1, falsebool, s);
 	emit_beq(ACC, T1, label_else, s);
-	DEF_LABEL(label_then);
 		then_exp->code(s);
+		emit_branch(label_endif, s);
 	DEF_LABEL(label_else);
 		else_exp->code(s);
+	DEF_LABEL(label_endif);
 }
 
 void loop_class::code(ostream &s) {
@@ -1603,12 +1604,12 @@ void isvoid_class::code(ostream &s) {
 	int label_endif = newLabel();
 
 	e1->code(s);
-	emit_beqz(ACC, label_isvod, s);
-	emit_load_bool(ACC, falsebool, s);
-	emit_branch(label_endif, s);
+	emit_beq(ACC, ZERO, label_isvod, s);
+		emit_load_bool(ACC, falsebool, s);
+		emit_branch(label_endif, s);
 	
 	DEF_LABEL(label_isvod);
-	emit_load_bool(ACC, truebool, s);
+		emit_load_bool(ACC, truebool, s);
 
 	DEF_LABEL(label_endif);
 }

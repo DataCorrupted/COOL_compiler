@@ -1,4 +1,5 @@
 -- Tested and passed. --
+-- Peter Rong 14 Jun, 2018 --
 class Main{
 	a: Int <- 2;
 	b: Int;
