@@ -1,24 +1,27 @@
+-- Tested and passed. --
+-- Peter Rong 14 Jun, 2018 --
 class Main{
-	a: Int;
+	a: Int <- 1;
 	b: Bool;
 	a_void: A;
 	a_nonvoid: A <- new A;
 
 	cout: IO <- new IO;
 	main(): Bool{{
-		outBool(isvoid a_void);
-		outBool(isvoid a_nonvoid);
+		if isvoid a_void then
+			cout.out_string("True\n")
+		else
+			cout.out_string("False\n")
+		fi;		
+
+		if isvoid a_nonvoid then
+			cout.out_string("True\n")
+		else
+			cout.out_string("False\n")
+		fi;		
 		false;
 	}};
 
-	outBool(b: Bool): Int{{
-		if b then
-			cout.out_string("True")
-		else
-			cout.out_string("False")
-		fi;		
-		1;
-	}};
 };
 
 class A{
