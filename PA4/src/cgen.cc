@@ -1237,7 +1237,15 @@ void dispatch_common(Expression& expr, Symbol * type_name, Symbol& name, Express
     emit_label_def(label_exec,s);
 
     // get the dispatch table of object at $a0
-    emit_load(T1,2,ACC,s);
+    if (is_static_dispatch){
+        emit_partial_load_address(T1,s);
+        emit_disptable_ref(*type_name,s);
+        s << endl;
+    }
+    else {
+        emit_load(T1, 2, ACC, s);
+    }
+
     // get the function offset
     int func_offset = 0;
 
@@ -1271,14 +1279,14 @@ void dispatch_common(Expression& expr, Symbol * type_name, Symbol& name, Express
 }
 
 void static_dispatch_class::code(ostream &s) {
+	if (cgen_debug) s << "# static_dispatch called" << endl;
 
-	if (cgen_debug)  s << "# static_dispatch called" << endl;
-
-
+    char * filename = cur_class->get_filename()->get_string();
+    dispatch_common(expr, &type_name,name,actual,filename,this->get_line_number(),true,s);
 }
 
 void dispatch_class::code(ostream &s) {
-    s << "# dispatch called" << endl;
+    if (cgen_debug) s << "# dispatch called" << endl;
 
     char * filename = cur_class->get_filename()->get_string();
     dispatch_common(expr,NULL,name,actual,filename,this->get_line_number(),false,s);
