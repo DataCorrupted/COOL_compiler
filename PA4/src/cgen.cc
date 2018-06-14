@@ -1194,6 +1194,82 @@ void assign_class::code(ostream &s) {
 	emit_store(ACC, obj_loc->getOffset(), obj_loc->getReg(), s);
 }
 
+// An helper function for dispatch
+// type_name is of use only when it's non-static dispatch
+void dispatch_common(Expression& expr, Symbol * type_name, Symbol& name, Expressions& actual,
+                     char * filename, int line_num, bool is_static_dispatch, ostream &s){
+    if (cgen_debug)  s << "# dispatch_common called" << endl;
+
+    // create new label
+    int label_exec = newLabel();
+
+    // deal with all args and push to stack (a1-aN)
+    for (int i = 0; i < actual->len(); i++){
+        Expression arg = actual->nth(i);
+        // eval the arg and push to stack
+        arg->code(s);
+        emit_push(ACC,s);
+    }
+
+    // the first parameter is the object itself
+    if (expr->get_type() == self) {
+        // move s0 to a0 (as the first parameter)
+        emit_move(ACC, SELF, s);
+    }
+    else{
+        // eval the attr name, the attr get loaded to $a0 automatically
+        expr->code(s);
+    }
+
+    // Abort
+    // if a0 is $0, abort and call dispatch_abort
+    emit_bne(ACC,ZERO,label_exec,s);
+    // load filename
+    StringEntry * fname = stringtable.lookup_string(filename);
+    emit_partial_load_address(ACC,s);
+    fname->code_ref(s);
+    s << endl;
+    // T1 is the line number
+    emit_load_imm(T1,line_num,s);
+    emit_jal("_dispatch_abort",s);
+
+    // Valid: preceed to exec
+    emit_label_def(label_exec,s);
+
+    // get the dispatch table of object at $a0
+    emit_load(T1,2,ACC,s);
+    // get the function offset
+    int func_offset = 0;
+
+    std::map<Symbol, Method> method_map;
+    // get the dispatch table for object
+    if (is_static_dispatch){
+        method_map = class_map[*type_name]->getMethodMap();
+    }
+    else {
+        Symbol object_name = expr->get_type();
+        if (object_name == self) {
+            method_map = cur_class->getMethodMap();
+        } else {
+            method_map = class_map[object_name]->getMethodMap();
+        }
+    }
+
+    // search for the target function in the dispatch table
+    for (std::map<Symbol, Method>::const_iterator iter = method_map.begin();
+         iter != method_map.end();
+         ++iter){
+        if (iter->first == name){
+            break;
+        }
+        func_offset ++;
+    }
+    emit_load(T1,func_offset,T1,s);
+
+    // jalr
+    emit_jalr(T1,s);
+}
+
 void static_dispatch_class::code(ostream &s) {
 
 	if (cgen_debug)  s << "# static_dispatch called" << endl;
@@ -1203,69 +1279,9 @@ void static_dispatch_class::code(ostream &s) {
 
 void dispatch_class::code(ostream &s) {
     s << "# dispatch called" << endl;
-    // create new label
-    int label_exec = newLabel();
 
-    // deal with all args and push to stack (a1-aN)
-	for (int i = 0; i < actual->len(); i++){
-		Expression arg = actual->nth(i);
-		// eval the arg and push to stack
-		arg->code(s);
-		emit_push(ACC,s);
-	}
-
-	// the first parameter is the object itself
-    if (expr->get_type() == self) {
-		// move s0 to a0 (as the first parameter)
-		emit_move(ACC, SELF, s);
-	}
-	else{
-		// eval the attr name, the attr get loaded to $a0 automatically
-        expr->code(s);
-	}
-
-	// Abort
-	// if a0 is $0, abort and call dispatch_abort
-    emit_bne(ACC,ZERO,label_exec,s);
-    // load filename
-	StringEntry * fname = stringtable.lookup_string(cur_class->get_filename()->get_string());
-    emit_partial_load_address(ACC,s);
-	fname->code_ref(s);
-    s << endl;
-    // T1 is the line number
-    emit_load_imm(T1,this->get_line_number(),s);
-    emit_jal("_dispatch_abort",s);
-
-    // Valid: preceed to exec
-    emit_label_def(label_exec,s);
-
-    // get the dispatch table of object at $a0
-    emit_load(T1,2,ACC,s);
-    // get the function offset
-	int func_offset = 0;
-	Symbol object_name = expr->get_type();
-
-	// get the dispatch table for object
-	std::map<Symbol, Method> method_map;
-	if (object_name == self) {
-		method_map = cur_class->getMethodMap();
-	}
-	else{
-		method_map = class_map[object_name]->getMethodMap();
-	}
-	// search for the target function in the dispatch table
-	for (std::map<Symbol, Method>::const_iterator iter = method_map.begin();
-		 iter != method_map.end();
-		 ++iter){
-		if (iter->first == name){
-			break;
-		}
-		func_offset ++;
-	}
-	emit_load(T1,func_offset,T1,s);
-
-	// jalr
-    emit_jalr(T1,s);
+    char * filename = cur_class->get_filename()->get_string();
+    dispatch_common(expr,NULL,name,actual,filename,this->get_line_number(),false,s);
 
 }
 
