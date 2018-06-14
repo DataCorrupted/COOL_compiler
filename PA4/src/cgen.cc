@@ -1184,12 +1184,14 @@ int newLabel(){
 //      such code should be posted on pornhub instead of github. :)
 //
 void assign_class::code(ostream &s) {
+    if (cgen_debug)     s << "# encoding assign_class" << endl;
     // Eval expression
 	expr->code(s);
 	// Get the location(in terms of register).
 	ObjectLocation* obj_loc = env.lookup(name);
 	// Copy it to that location.
 	emit_store(ACC, obj_loc->getOffset(), obj_loc->getReg(), s);
+    if (cgen_debug)     s << "# [Done] encoding assign_class" << endl;
 }
 
 // An helper function for dispatch
@@ -1282,21 +1284,23 @@ void dispatch_common(Expression& expr, Symbol * type_name, Symbol& name, Express
 }
 
 void static_dispatch_class::code(ostream &s) {
-	if (cgen_debug) s << "# static_dispatch called" << endl;
+    if (cgen_debug)     s << "# encoding static dispatch" << endl;
 
     char * filename = cur_class->get_filename()->get_string();
     dispatch_common(expr, &type_name,name,actual,filename,this->get_line_number(),true,s);
+    if (cgen_debug)     s << "# [DONE] encoding static dispatch" << endl;
 }
 
 void dispatch_class::code(ostream &s) {
-    if (cgen_debug) s << "# dispatch called" << endl;
+    if (cgen_debug)     s << "# encoding dispatch (dynamic)" << endl;
 
     char * filename = cur_class->get_filename()->get_string();
     dispatch_common(expr,NULL,name,actual,filename,this->get_line_number(),false,s);
-
+    if (cgen_debug)     s << "# [DONE] encoding dispatch (dynamic)" << endl;
 }
 
 void cond_class::code(ostream &s) {
+    if (cgen_debug)     s << "# encoding cond_class" << endl;
 	int label_then = newLabel();
 	int label_else = newLabel();
 
@@ -1310,6 +1314,7 @@ void cond_class::code(ostream &s) {
 }
 
 void loop_class::code(ostream &s) {
+    if (cgen_debug)     s << "# encoding loop_class" << endl;
 	int label_beginloop = newLabel();
 	int label_endloop = newLabel();
 
@@ -1330,6 +1335,7 @@ void loop_class::code(ostream &s) {
 }
 
 void typcase_class::code(ostream &s) {
+    if (cgen_debug)     s << "# encoding typecase_class" << endl;
 	int label_notvoid = newLabel();
 	int label_endcase = newLabel();
 
@@ -1381,12 +1387,14 @@ void typcase_class::code(ostream &s) {
 }
 
 void block_class::code(ostream &s) {
+    if (cgen_debug)     s << "# encoding block" << endl;
 	for (int i = body->first(); body->more(i); i = body->next(i)){
 		body->nth(i)->code(s);
 	}
 }
 
 void let_class::code(ostream &s) {
+    if (cgen_debug)     s << "# encoding let" << endl;
 	// Init the new object.
 	if (typeid(*init) == typeid(no_expr_class)) {
 		// Int: 0
@@ -1434,6 +1442,7 @@ void let_class::code(ostream &s) {
 // Notice that arith are based on Int type and thus need to
 // use fetch int.
 void arith_common(Expression e1, Expression e2, ostream& s){
+    if (cgen_debug)     s << "# arith_common is called" << endl;
 	// Eval e1. (the result is stored in a0)
 	e1->code(s);
 	// push a0 to stack
@@ -1501,6 +1510,7 @@ void comp_class::code(ostream &s) {
 }
 
 void lessThanCommon(Expression e1, Expression e2, ostream& s, const bool eq){
+    if (cgen_debug)     s << "# lessThanCommon is called" << endl;
 	int label_isles = newLabel() ;
 	int label_endif = newLabel();
 	// eval e1, e2 and store to t1 t2
@@ -1529,6 +1539,7 @@ void leq_class::code(ostream &s) {
 }
 
 void eq_class::code(ostream &s) {
+    if (cgen_debug)     s << "# encoding eq" << endl;
 	int label_ptreq = newLabel();
 
 	e1->code(s);
@@ -1553,8 +1564,9 @@ void eq_class::code(ostream &s) {
 	// End of branch.
 }
 
-void int_const_class::code(ostream& s)  
+void int_const_class::code(ostream& s)
 {
+    if (cgen_debug)     s << "# encoding int_const" << endl;
 	//
 	// Need to be sure we have an IntEntry *, not an arbitrary Symbol
 	//
@@ -1563,15 +1575,18 @@ void int_const_class::code(ostream& s)
 
 void string_const_class::code(ostream& s)
 {
+    if (cgen_debug)     s << "# encoding string_const" << endl;
 	emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
 }
 
 void bool_const_class::code(ostream& s)
 {
+    if (cgen_debug)     s << "# encoding bool_const" << endl;
 	emit_load_bool(ACC, BoolConst(val), s);
 }
 
 void new__class::code(ostream &s) {
+    if (cgen_debug)     s << "# encoding new_class" << endl;
 	if (type_name == SELF_TYPE){
 		emit_load(T1, 0, SELF, s);
 		// *8 == <<3
@@ -1603,6 +1618,7 @@ void new__class::code(ostream &s) {
 }
 
 void isvoid_class::code(ostream &s) {
+    if (cgen_debug)     s << "# encoding isvoid" << endl;
 	int label_isvod = newLabel();
 	int label_endif = newLabel();
 
@@ -1618,11 +1634,14 @@ void isvoid_class::code(ostream &s) {
 }
 
 void no_expr_class::code(ostream &s) {
+    if (cgen_debug)     s << "# encoding no_expr" << endl;
 	emit_move(ACC, ZERO, s);
 }
 
 void object_class::code(ostream &s) {
+    if (cgen_debug)     s << "# encoding object" << endl;
 	// search for the location (offset to the object)
+    // if (cgen_debug)     s << "# object name: " << name << endl;
 	ObjectLocation * loc = env.lookup(name);
 
 	// move the attr to a0
