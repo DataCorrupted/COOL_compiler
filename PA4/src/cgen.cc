@@ -1146,10 +1146,15 @@ void CgenNode::collectFeatures(){
 			// Record which object does this method belong to.
 			// This will not change, unless it's override by 
 			// inherted method.
+			bool inherited = false;
 			for (int i=0; i<method_vec_.size(); i++){
 				if (method_vec_[i]->getName() == m->getName()){
 					method_vec_[i] = m;
-				}
+					inherited = true;
+				} 
+			}
+			if (!inherited){
+				method_vec_.push_back(m);
 			}
 		}
 	}
