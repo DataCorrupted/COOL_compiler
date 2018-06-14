@@ -918,33 +918,67 @@ void CgenClassTable::codeClassNameTab() const{
 void CgenClassTable::codeClassObjTab() const{
 	str << CLASSOBJTAB << LABEL;
 	CgenNode* cur_node;
-	for(List<CgenNode> *l = nds; l; l = l->tl()){
-		cur_node = l->hd();
-		str << WORD; emit_protobj_ref(cur_node->get_name(), str); str << endl;
-		str << WORD; emit_init_ref(cur_node->get_name(), str); str << endl;
+	for (int i=0; i<getCurrTotalTag(); i++){
+		for (List<CgenNode> *l = nds; l; l = l->tl()){
+			CgenNodeP cur_node = l->hd();
+			if (cur_node->getTag() == i){
+				str << WORD; 
+					emit_protobj_ref(cur_node->get_name(), str); 
+				str << endl;
+				
+				str << WORD; 
+					emit_init_ref(cur_node->get_name(), str); 
+				str << endl;
+				break;
+			}
+		}		
 	}
 }
 
 void CgenClassTable::codeDispatchTable() const{
-	for(List<CgenNode> *l = nds; l; l = l->tl()){
-		l->hd()->codeDispatchTable(str);
+	for (int i=0; i<getCurrTotalTag(); i++){
+		for (List<CgenNode> *l = nds; l; l = l->tl()){
+			CgenNodeP cur_node = l->hd();
+			if (cur_node->getTag() == i){
+				cur_node->codeDispatchTable(str);
+				break;
+			}
+		}		
 	}
 }
 
 void CgenClassTable::codeProtoTypeObj() const{
-	for (List<CgenNode> *l = nds; l; l = l->tl()){
-		l->hd()->codeProtoTypeObj(str);
+	for (int i=0; i<getCurrTotalTag(); i++){
+		for (List<CgenNode> *l = nds; l; l = l->tl()){
+			CgenNodeP cur_node = l->hd();
+			if (cur_node->getTag() == i){
+				cur_node->codeProtoTypeObj(str);
+				break;
+			}
+		}		
 	}
 }
 
 void CgenClassTable::codeObjectInit() const {
-	for (List<CgenNode> *l = nds; l; l = l->tl()){
-		l->hd()->codeObjectInit(str);
+	for (int i=0; i<getCurrTotalTag(); i++){
+		for (List<CgenNode> *l = nds; l; l = l->tl()){
+			CgenNodeP cur_node = l->hd();
+			if (cur_node->getTag() == i){
+				cur_node->codeObjectInit(str);
+				break;
+			}
+		}		
 	}
 }
 void CgenClassTable::codeClassMethod() const {
-	for (List<CgenNode> *l = nds; l; l = l->tl()){
-		l->hd()->codeClassMethod(str);
+	for (int i=0; i<getCurrTotalTag(); i++){
+		for (List<CgenNode> *l = nds; l; l = l->tl()){
+			CgenNodeP cur_node = l->hd();
+			if (cur_node->getTag() == i){
+				cur_node->codeClassMethod(str);
+				break;
+			}
+		}		
 	}
 }
 

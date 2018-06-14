@@ -57,6 +57,7 @@ public:
 		tag_cnt_++;
 		return tag_cnt_;
 	}
+	const int getCurrTotalTag() const { return tag_cnt_ + 1; }
 	void code();
 	const CgenNodeP root();
 	const CgenNodeP getNodeWithTag(const unsigned int);
