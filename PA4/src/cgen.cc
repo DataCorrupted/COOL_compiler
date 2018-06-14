@@ -1278,15 +1278,12 @@ void typcase_class::code(ostream &s) {
 }
 
 void block_class::code(ostream &s) {
-	s << "\t# Start of block\n";
 	for (int i = body->first(); body->more(i); i = body->next(i)){
 		body->nth(i)->code(s);
 	}
-	s << "\t# End of block\n";
 }
 
 void let_class::code(ostream &s) {
-	s << "\t# Start of let " << identifier->get_string() << "\n";
 	// Init the new object.
 	if (typeid(*init) == typeid(no_expr_class)) {
 		// Int: 0
@@ -1326,7 +1323,6 @@ void let_class::code(ostream &s) {
 	// Exit.
 	local_var_cnt --;
 	env.exitscope();
-	s << "\t# End of let " << identifier->get_string() << "\n";
 }
 
 // TODO: check that all temp register is not using ACC (it's for argu only)
@@ -1355,39 +1351,31 @@ void arith_common(Expression e1, Expression e2, ostream& s){
 }
 
 void plus_class::code(ostream &s) {
-	s << "\t# Start of plus. \n";
 	arith_common(e1, e2, s);
 	// Doing the op.
 	emit_addu(T1, T1, T2, s);
 	emit_store_int(T1, ACC, s);
-	s << "\t# End of plus. \n";
 }
 
 void sub_class::code(ostream &s) {
-	s << "\t# Start of subtract. \n";
 	arith_common(e1, e2, s);
 	// Doing the op.
 	emit_sub(T1, T1, T2, s);
 	emit_store_int(T1, ACC, s);
-	s << "\t# End of subtract. \n";
 }
 
 void mul_class::code(ostream &s) {
-	s << "\t# Start of multiplication. \n";
 	arith_common(e1, e2, s);
 	// Doing the op.
 	emit_mul(T1, T1, T2, s);
 	emit_store_int(T1, ACC, s);
-	s << "\t# End of multiplication. \n";
 }
 
 void divide_class::code(ostream &s) {
-	s << "\t# Start of divide. \n";
 	arith_common(e1, e2, s);
 	// Doing the op.
 	emit_div(T1, T1, T2, s);
 	emit_store_int(T1, ACC, s);
-	s << "\t# End of divide. \n";
 }
 
 // Negate.
