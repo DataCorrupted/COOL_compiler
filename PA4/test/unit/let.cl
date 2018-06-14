@@ -1,3 +1,5 @@
+-- Tested and passed. --
+-- Peter Rong 14 Jun, 2018 --
 class Main{
 
 	cout : IO <- new IO;

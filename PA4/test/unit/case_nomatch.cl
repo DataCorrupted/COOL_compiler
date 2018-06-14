@@ -1,3 +1,5 @@
+-- Tested and passed. --
+-- Peter Rong 14 Jun, 2018 --
 class Main{
 	mid : Int <- 1;
 	cout : IO <- new IO;

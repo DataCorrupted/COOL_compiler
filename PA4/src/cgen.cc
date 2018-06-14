@@ -1350,7 +1350,7 @@ void typcase_class::code(ostream &s) {
 		StringEntry *str_entry = 
 			stringtable.lookup_string(cur_class->get_filename()->get_string());
 		emit_load_string(ACC, str_entry, s);
-		emit_load_imm(T1, cur_class->get_line_number(), s);
+		emit_load_imm(T1, get_line_number(), s);
 		emit_jal("_case_abort2", s);
 	// Not a void match, go on.
 	DEF_LABEL(label_notvoid);

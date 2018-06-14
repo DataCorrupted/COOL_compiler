@@ -1,15 +1,5 @@
-class Main{
-	mid : A;
-
-	main(): Int {
-	    case mid of
-	    	x : Int => (1+1+1*9);
-	    	y : Bool => (1+2);
-	    	z : A => 1;
-	    esac
-	};
-};
-
+-- Tested and passed. --
+-- Peter Rong 14 Jun, 2018 --
 class Main{
 	mid : A;
 	cout : IO <- new IO;
@@ -22,7 +12,7 @@ class Main{
 		0;
 	}};
 
-	print(a: Int){{
+	print(a: Int): Int {{
 		cout.out_int(a);
 		cout.out_string("\n");
 		a;
