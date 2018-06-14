@@ -34,6 +34,7 @@ int local_var_cnt = 1;
 SymbolTable<Symbol, ObjectLocation> env;
 CgenNode* cur_class;
 std::map<Symbol, CgenNodeP> class_map;
+
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
 // If e : No_type, then no code is generated for e.
@@ -655,6 +656,7 @@ CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
 	intclasstag =    probe(Int)->getTag();
 	boolclasstag =   probe(Bool)->getTag();
 
+
 	for (List<CgenNode> *l = nds; l; l = l->tl()){
 		CgenNodeP n = l->hd();
 		class_map[n->getName()] = n;
@@ -1069,6 +1071,11 @@ void CgenNode::codeClassMethod(ostream& str){
 				SELF, DEFAULT_OBJFIELDS + i, attr_vec_[i]->getType()) 	// Value
 		);
 	}
+	// self have SELF_TYPE
+	env.addid(
+		self,
+		new ObjectLocation(SELF, 0, SELF_TYPE)
+	);
 
 	// Code each method one by one. Skip those inherited ones.
 	for (std::map<Symbol, Method>::const_iterator iter = method_map_.begin();
@@ -1633,13 +1640,13 @@ void no_expr_class::code(ostream &s) {
 
 void object_class::code(ostream &s) {
     if (cgen_debug)     s << "# encoding object" << endl;
-	// search for the location (offset to the object)
-    // if (cgen_debug)     s << "# object name: " << name << endl;
-	ObjectLocation * loc = env.lookup(name);
-
-	// move the attr to a0
-	emit_load(ACC,loc->getOffset(), loc->getReg(), s);
+	
+	if (name == self){
+		emit_move(ACC, SELF, s);
+	} else {
+		// search for the location (offset to the object)
+		ObjectLocation * loc = env.lookup(name);
+		// move the attr to a0
+		emit_load(ACC,loc->getOffset(), loc->getReg(), s);
+	}
 }
-
-
-
