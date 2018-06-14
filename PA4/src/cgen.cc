@@ -643,9 +643,8 @@ void CgenClassTable::code_constants()
 
 CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
 {
-
 	enterscope();
-	if (cgen_debug) cout << "Building CgenClassTable" << endl;
+	if (cgen_debug) cout << "# Building CgenClassTable" << endl;
 	install_basic_classes();
 	install_classes(classes);
 	build_inheritance_tree();
@@ -865,34 +864,34 @@ void CgenNode::set_parentnd(CgenNodeP p)
 
 void CgenClassTable::code()
 {
-	if (cgen_debug) cout << "coding global data" << endl;
+	if (cgen_debug) cout << "# coding global data" << endl;
 	code_global_data();
 
-	if (cgen_debug) cout << "choosing gc" << endl;
+	if (cgen_debug) cout << "# choosing gc" << endl;
 	code_select_gc();
 
-	if (cgen_debug) cout << "coding constants" << endl;
+	if (cgen_debug) cout << "# coding constants" << endl;
 	code_constants();
 
-	if (cgen_debug) { cout << "#coding class_nameTab" << endl; }
+	if (cgen_debug) { cout << "# coding class_nameTab" << endl; }
 	codeClassNameTab();
 
-	if (cgen_debug) { cout <<"#coding class_objTab" << endl; }
+	if (cgen_debug) { cout <<"# coding class_objTab" << endl; }
 	codeClassObjTab();
 
-	if (cgen_debug) { cout << "#coding dispatch tables" << endl; }
+	if (cgen_debug) { cout << "# coding dispatch tables" << endl; }
 	codeDispatchTable();
 
-	if (cgen_debug) { cout << "#coding prototype objects" << endl; }
+	if (cgen_debug) { cout << "# coding prototype objects" << endl; }
 	codeProtoTypeObj();
 
-	if (cgen_debug) cout << "coding global text" << endl;
+	if (cgen_debug) cout << "# coding global text" << endl;
 	code_global_text();
 
-	if (cgen_debug) { cout << "coding object init " << endl; }
+	if (cgen_debug) { cout << "# coding object init " << endl; }
 	codeObjectInit();
 
-	if (cgen_debug) { cout << "coding each method" << endl; }	
+	if (cgen_debug) { cout << "# coding each method" << endl; }
 	codeClassMethod();
 
 
@@ -1199,6 +1198,8 @@ void dispatch_common(Expression& expr, Symbol * type_name, Symbol& name, Express
                      char * filename, int line_num, bool is_static_dispatch, ostream &s){
     if (cgen_debug)  s << "# dispatch_common called" << endl;
 
+
+	if (cgen_debug)  s << "# creating new label" << endl;
     // create new label
     int label_exec = newLabel();
 
@@ -1211,7 +1212,8 @@ void dispatch_common(Expression& expr, Symbol * type_name, Symbol& name, Express
     }
 
     // the first parameter is the object itself
-    if (expr->get_type() == self) {
+    if (cgen_debug)  s << "# generating code for object_id: " << expr->get_type() << endl;
+    if (expr->get_type() == SELF_TYPE) {
         // move s0 to a0 (as the first parameter)
         emit_move(ACC, SELF, s);
     }
@@ -1220,6 +1222,7 @@ void dispatch_common(Expression& expr, Symbol * type_name, Symbol& name, Express
         expr->code(s);
     }
 
+    if (cgen_debug)  s << "# abort on error" << endl;
     // Abort
     // if a0 is $0, abort and call dispatch_abort
     emit_bne(ACC,ZERO,label_exec,s);
@@ -1232,6 +1235,7 @@ void dispatch_common(Expression& expr, Symbol * type_name, Symbol& name, Express
     emit_load_imm(T1,line_num,s);
     emit_jal("_dispatch_abort",s);
 
+    if (cgen_debug)  s << "# exec dispatched table" << endl;
     // Valid: preceed to exec
     emit_label_def(label_exec,s);
 
@@ -1255,7 +1259,7 @@ void dispatch_common(Expression& expr, Symbol * type_name, Symbol& name, Express
     }
     else {
         Symbol object_name = expr->get_type();
-        if (object_name == self) {
+        if (object_name == SELF_TYPE) {
             method_map = cur_class->getMethodMap();
         } else {
             method_map = class_map[object_name]->getMethodMap();
