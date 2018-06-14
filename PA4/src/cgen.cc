@@ -26,7 +26,7 @@
 #include "cgen_gc.h"
 #include <stack>
 #include <typeinfo>
-#include <sstream>
+#include <map>
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
 
@@ -968,10 +968,8 @@ const CgenNodeP CgenClassTable::getNodeWithTag(const unsigned int tag){
 void CgenNode::codeDispatchTable(ostream& str) const {
 	emit_disptable_ref(name, str); str << LABEL;
 	// For each method
-	for (std::map<Symbol, Method>::const_iterator iter = method_map_.begin();
-	  iter != method_map_.end();
-	  ++iter){
-		Method m = iter->second;
+	for (int i=0; i<method_vec_.size(); i++){
+		Method m = method_vec_[i];
 		str << WORD; 
 		emit_method_ref(m->getNative(), m->getName(), str); 
 		str << endl;	
@@ -1078,10 +1076,8 @@ void CgenNode::codeClassMethod(ostream& str){
 	);
 
 	// Code each method one by one. Skip those inherited ones.
-	for (std::map<Symbol, Method>::const_iterator iter = method_map_.begin();
-	  iter != method_map_.end();
-	  ++iter){	
-		Method m = iter->second;
+	for (int i=0; i<method_vec_.size(); i++){
+		Method m = method_vec_[i];
 		// Code method only when this method is defined by myself,
 		// or it would've been coded by it's parent.
 		if (m->getNative() == name){
@@ -1129,7 +1125,7 @@ void CgenNode::collectFeatures(){
 	// Object has no parent. Leave it empty.
 	// Or we "stole" the map from the parent.
 	if (parentnd){
-		method_map_ = std::map<Symbol, Method>(parentnd->getMethodMap());
+		method_vec_ = std::vector<Method>(parentnd->getMethodVec());
 		attr_vec_ = std::vector<Attribute>(parentnd->getAttrVec());
 	}
 
@@ -1150,7 +1146,11 @@ void CgenNode::collectFeatures(){
 			// Record which object does this method belong to.
 			// This will not change, unless it's override by 
 			// inherted method.
-			method_map_[m->getName()] = m;
+			for (int i=0; i<method_vec_.size(); i++){
+				if (method_vec_[i]->getName() == m->getName()){
+					method_vec_[i] = m;
+				}
+			}
 		}
 	}
 }
@@ -1256,33 +1256,29 @@ void dispatch_common(Expression& expr, Symbol * type_name, Symbol& name, Express
 		emit_load(T1, 2, ACC, s);
 	}
 
-	// get the function offset
-	int func_offset = 0;
-
-	std::map<Symbol, Method> method_map;
+	std::vector<Method> method_vec;
 	// get the dispatch table for object
 	if (is_static_dispatch){
-		method_map = class_map[*type_name]->getMethodMap();
+		method_vec = class_map[*type_name]->getMethodVec();
 	}
 	else {
 		Symbol object_name = expr->get_type();
 		if (object_name == SELF_TYPE) {
-			method_map = cur_class->getMethodMap();
+			method_vec = cur_class->getMethodVec();
 		} else {
-			method_map = class_map[object_name]->getMethodMap();
+			method_vec = class_map[object_name]->getMethodVec();
 		}
 	}
 
+	// get the function offset
+	int func_offset = 0;
 	// search for the target function in the dispatch table
-	for (std::map<Symbol, Method>::const_iterator iter = method_map.begin();
-		 iter != method_map.end();
-		 ++iter){
-		if (iter->first == name){
-			break;
-		}
-		func_offset ++;
+	for (func_offset=0; func_offset < method_vec.size(); func_offset++){
+		Method m = method_vec[func_offset];
+		
+		if (m->getName() == name){ break; }
 	}
-	emit_load(T1,func_offset,T1,s);
+	emit_load(T1, func_offset, T1, s);
 
 	// jalr
 	emit_jalr(T1,s);

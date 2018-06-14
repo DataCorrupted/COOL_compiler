@@ -3,7 +3,6 @@
 #include "emit.h"
 #include "cool-tree.h"
 #include "symtab.h"
-#include <map>
 #include <vector>
 
 enum Basicness     {Basic, NotBasic};
@@ -70,7 +69,7 @@ private:
 	List<CgenNode> *children;                  // Children of class
 	Basicness basic_status;                    // `Basic' if class is basic
 											// `NotBasic' otherwise
-	std::map<Symbol, Method> method_map_;
+	std::vector<Method> method_vec_;
 	std::vector<Attribute> attr_vec_;
 
 	int tag_ = -1;
@@ -86,7 +85,7 @@ public:
 	void codeProtoTypeObj(ostream&) const;
 	void codeObjectInit(ostream&) const;
 	void codeClassMethod(ostream&);
-	const std::map<Symbol, Method>& getMethodMap() const { return method_map_; }
+	const std::vector<Method>& getMethodVec() const { return method_vec_; }
 	const std::vector<Attribute>& getAttrVec() const { return attr_vec_; }
 
 	void add_child(CgenNodeP child);
