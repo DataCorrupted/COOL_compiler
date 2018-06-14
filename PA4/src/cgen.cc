@@ -1214,7 +1214,7 @@ void dispatch_class::code(ostream &s) {
     emit_partial_load_address(ACC,s);
     err_msg->code_ref(s);
     s << endl;
-    // syscall 9
+    // TODO: this is wrong... syscall 9
     emit_load_imm(T1,9,s);
     emit_jal("_dispatch_abort",s);
 
@@ -1224,7 +1224,20 @@ void dispatch_class::code(ostream &s) {
     // get the dispatch table of object at $a0
     emit_load(T1,2,ACC,s);
     // get the function offset
-    
+	int func_offset = 0;
+	std::map<Symbol, Method> method_map = cur_class->getMethodMap();
+	for (std::map<Symbol, Method>::const_iterator iter = method_map.begin();
+		 iter != method_map.end();
+		 ++iter){
+		if (iter->first == name){
+			break;
+		}
+		func_offset ++;
+	}
+	emit_load(T1,func_offset,T1,s);
+
+	// jalr
+    emit_jalr(T1,s);
 
 }
 
