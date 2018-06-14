@@ -11,7 +11,7 @@ class Main{
 	};
 
 	main(): Int{{
-		self.foo(true,1);
+		self.main();
 		1;
 	}};
 };
