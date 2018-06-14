@@ -1422,9 +1422,6 @@ void let_class::code(ostream &s) {
 	env.exitscope();
 }
 
-// TODO: check that all temp register is not using ACC (it's for argu only)
-// TODO: check that all loading object attr is loading from s0
-
 // Notice that arith are based on Int type and thus need to
 // use fetch int.
 void arith_common(Expression e1, Expression e2, ostream& s){
@@ -1437,9 +1434,10 @@ void arith_common(Expression e1, Expression e2, ostream& s){
 	e2->code(s);
 	emit_copy(s);
 	// Take e2.
-	emit_move(T2, ACC, s);
+	emit_fetch_int(T2, ACC, s);
 	// Take e1
 	emit_pop(T1, s);
+	emit_fetch_int(T1, T1, s);
 	local_var_cnt--;
 }
 
