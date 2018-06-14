@@ -14,3 +14,23 @@ This folder originates from Stanford CS143. Missing folders and files(mainly bin
 
 cool-support is provided by CS143, yet it contains some important files that you should really read and understand.
 
+## Cool example testing status:
+
+	arith.cl	: core dumped. Failed to generate valid code.
+	atoi.cl		: Main not defined.
+	atoi_test.cl	: Illegal COOL program.
+	book_list.cl	: Invalid assembly code.
+	cells.cl	: passed.
+	complex.cl	: passed.
+	cool.cl		: passed.
+	graph.cl	: core dumped. Failed to generate valid code.
+	hairyscary.cl	: core dumped. Failed to generate valid code.
+	hello_world.cl	: passed.
+	io.cl		: passed.
+	lam.cl		: core dumped. Failed to generate valid code.
+	life.cl		: passed.
+	list.cl		: passed.
+	new_complex.cl	: passed.
+	palindrome.cl	: passed.
+	primes.cl	: core dumped. Failed to generate valid code.
+	sort_list.cl	: passed.

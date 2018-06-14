@@ -906,12 +906,16 @@ void CgenClassTable::code()
 
 void CgenClassTable::codeClassNameTab() const{
 	str << CLASSNAMETAB << LABEL;
-	CgenNode* cur_node;
-	for(List<CgenNode> *l = nds; l; l = l->tl()){
-		cur_node = l->hd();
-		StringEntry* se = 
-			stringtable.lookup_string(cur_node->get_name()->get_string());
-		str << WORD; se->code_ref(str); str << endl;
+	for (int i=0; i<getCurrTotalTag(); i++){
+		for(List<CgenNode> *l = nds; l; l = l->tl()){
+			CgenNodeP cur_node = l->hd();
+			if (cur_node->getTag() == i){
+				StringEntry* se = 
+					stringtable.lookup_string(cur_node->get_name()->get_string());
+				str << WORD; se->code_ref(str); str << endl;
+				break;
+			}
+		}
 	}
 }
 
@@ -1647,6 +1651,7 @@ void new__class::code(ostream &s) {
 		emit_partial_load_address(ACC, s);
 		emit_protobj_ref(type_name, s);
 		s << endl;
+		s << "# new" << type_name->get_string() << endl;
 		
 		// Copy it to heap.
 		emit_copy(s);
