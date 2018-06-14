@@ -33,6 +33,7 @@ extern int cgen_debug;
 int local_var_cnt = 1;
 SymbolTable<Symbol, ObjectLocation> env;
 CgenNode* cur_class;
+std::map<Symbol, CgenNodeP> class_map;
 
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
@@ -656,6 +657,11 @@ CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
 	intclasstag =    probe(Int)->getTag();
 	boolclasstag =   probe(Bool)->getTag();
 
+	for (List<CgenNode> *l = nds; l; l = l->tl()){
+		CgenNodeP n = l->hd();
+		class_map[n->getName()] = n;
+	}
+
 	code();
 	exitscope();
 }
@@ -1061,7 +1067,8 @@ void CgenNode::codeClassMethod(ostream& str){
 	for (int i=0; i<attr_vec_.size(); i++){
 		env.addid(
 			attr_vec_[i]->getName(),  						// Key
-			new ObjectLocation(SELF, DEFAULT_OBJFIELDS + i) // Value
+			new ObjectLocation(
+				SELF, DEFAULT_OBJFIELDS + i, attr_vec_[i]->getType()) 	// Value
 		);
 	}
 
@@ -1090,9 +1097,11 @@ void method_class::codeMethod(ostream& str) const{
 
 	// Add all formals.
 	for (int i=formals->first(); formals->more(i); i=formals->next(i)){
+		Formal formal = formals->nth(i);
 		env.addid(
-			formals->nth(i)->getName(), 						// Key
-			new ObjectLocation(FP, 3 + formals->len() - i + 1)	// Value
+			formal->getName(), 										// Key
+			new ObjectLocation(
+				FP, 3 + formals->len() - i + 1, formal->getType())	// Value
 		);
 	}
 
@@ -1277,6 +1286,15 @@ void loop_class::code(ostream &s) {
 }
 
 void typcase_class::code(ostream &s) {
+	int label_notvoid = newLabel();
+
+	expr->code(s);
+	// In case of a void match.
+	emit_bne(ACC, ZERO, label_notvoid, s);
+	// Get filename and line number, abort.
+
+	// Not a void match, go on.
+	DEF_LABEL(label_notvoid);
 }
 
 void block_class::code(ostream &s) {
@@ -1313,8 +1331,8 @@ void let_class::code(ostream &s) {
 	// Enter scope and add a new var.
 	env.enterscope();
 	env.addid(
-		identifier,								// Key
-		new ObjectLocation(FP, -local_var_cnt) 	// Value
+		identifier,											// Key
+		new ObjectLocation(FP, -local_var_cnt, type_decl) 	// Value
 	);
 	local_var_cnt ++;
 
@@ -1340,11 +1358,9 @@ void arith_common(Expression e1, Expression e2, ostream& s){
 	local_var_cnt ++;
 	// eval e2
 	e2->code(s);
-    // push a0 to stack
-    emit_push(ACC, s);
 	emit_copy(s);
 	// Take e2.
-	emit_pop(T2, s);
+	emit_move(T2, ACC, s);
 	// Take e1
 	emit_pop(T1, s);
 	local_var_cnt--;

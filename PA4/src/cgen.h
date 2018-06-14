@@ -18,12 +18,12 @@ typedef CgenNode *CgenNodeP;
 
 class CgenClassTable : public SymbolTable<Symbol,CgenNode> {
 private:
-	 List<CgenNode> *nds;
-	 ostream& str;
-	 int stringclasstag;
-	 int intclasstag;
-	 int boolclasstag;
-	 int tag_cnt_ = -1;
+	List<CgenNode> *nds;
+	ostream& str;
+	int stringclasstag;
+	int intclasstag;
+	int boolclasstag;
+	int tag_cnt_ = -1;
 
 // The following methods emit code for
 // constants and global declarations.
@@ -46,11 +46,11 @@ private:
 // a tree of `CgenNode', and class names are placed
 // in the base class symbol table.
 
-	 void install_basic_classes();
-	 void install_class(CgenNodeP nd);
-	 void install_classes(Classes cs);
-	 void build_inheritance_tree();
-	 void set_relations(CgenNodeP nd);
+	void install_basic_classes();
+	void install_class(CgenNodeP nd);
+	void install_classes(Classes cs);
+	void build_inheritance_tree();
+	void set_relations(CgenNodeP nd);
 public:
 	CgenClassTable(Classes, ostream& str);
 	void setTagForAllObjects();
@@ -66,14 +66,14 @@ public:
 
 class CgenNode : public class__class {
 private: 
-	 CgenNodeP parentnd;                        // Parent of class
-	 List<CgenNode> *children;                  // Children of class
-	 Basicness basic_status;                    // `Basic' if class is basic
-												// `NotBasic' otherwise
-	 std::map<Symbol, Method> method_map_;
-	 std::vector<Attribute> attr_vec_;
+	CgenNodeP parentnd;                        // Parent of class
+	List<CgenNode> *children;                  // Children of class
+	Basicness basic_status;                    // `Basic' if class is basic
+											// `NotBasic' otherwise
+	std::map<Symbol, Method> method_map_;
+	std::vector<Attribute> attr_vec_;
 
-	 int tag_ = -1;
+	int tag_ = -1;
 
 public:
 	CgenNode(Class_ c,
@@ -112,9 +112,12 @@ class ObjectLocation {
 private:
 	char* reg_;
 	int offset_;
+	Symbol native_;
 public:
-	ObjectLocation(char* c, int o): reg_(c), offset_(o) {;};
+	ObjectLocation(char* c, int o, Symbol n): 
+		reg_(c), offset_(o), native_(n) {;};
 	~ObjectLocation(){; } // TODO;
 	char* getReg() const { return reg_; };
 	const int getOffset() const { return offset_; };
+	Symbol getCgenNode() const { return native_; };
 };

@@ -71,6 +71,7 @@ public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
    virtual const Symbol getName() const = 0;
+   virtual const Symbol getType() const = 0;
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
 #endif
@@ -169,6 +170,7 @@ public:
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
    const Features getFeatures() const { return features; };
+   const Symbol getName() const { return name; }
 
 #ifdef Class__SHARED_EXTRAS
    Class__SHARED_EXTRAS
@@ -227,6 +229,7 @@ public:
    const bool isAttribute() const { return true; };
    const Symbol getName() const { return name; };
    const Expression getInit() const { return init; };
+   const Symbol getType() const { return type_decl; };
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -250,6 +253,7 @@ public:
    Formal copy_Formal();
    void dump(ostream& stream, int n);
    const Symbol getName() const { return name; } 
+   const Symbol getType() const { return type_decl; }
 
 #ifdef Formal_SHARED_EXTRAS
    Formal_SHARED_EXTRAS
