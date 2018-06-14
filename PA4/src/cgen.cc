@@ -426,7 +426,7 @@ void StringEntry::code_def(ostream& s, int stringclasstag)
 			<< WORD << (DEFAULT_OBJFIELDS + STRING_SLOTS + (len+4)/4) << endl // size
 			<< WORD;
 
- 			emit_disptable_ref(Str, s);
+			emit_disptable_ref(Str, s);
 
 			s << endl;                                              // dispatch table
 			s << WORD;  lensym->code_ref(s);  s << endl;            // string length
@@ -468,7 +468,7 @@ void IntEntry::code_def(ostream &s, int intclasstag)
 			<< WORD << (DEFAULT_OBJFIELDS + INT_SLOTS) << endl  // object size
 			<< WORD; 
 
- 			emit_disptable_ref(Int, s);
+			emit_disptable_ref(Int, s);
 
 			s << endl;                                          // dispatch table
 			s << WORD << str << endl;                           // integer value
@@ -512,7 +512,7 @@ void BoolConst::code_def(ostream& s, int boolclasstag)
 			<< WORD << (DEFAULT_OBJFIELDS + BOOL_SLOTS) << endl   // object size
 			<< WORD;
 
- 			emit_disptable_ref(Bool, s);
+			emit_disptable_ref(Bool, s);
 
 			s << endl;                                            // dispatch table
 			s << WORD << val << endl;                             // value (0 or 1)
@@ -969,7 +969,7 @@ void CgenNode::codeDispatchTable(ostream& str) const {
 	for (std::map<Symbol, Method>::const_iterator iter = method_map_.begin();
 	  iter != method_map_.end();
 	  ++iter){
-	  	Method m = iter->second;
+		Method m = iter->second;
 		str << WORD; 
 		emit_method_ref(m->getNative(), m->getName(), str); 
 		str << endl;	
@@ -1184,8 +1184,7 @@ int newLabel(){
 //      such code should be posted on pornhub instead of github. :)
 //
 void assign_class::code(ostream &s) {
-    if (cgen_debug)     s << "# encoding assign_class" << endl;
-    // Eval expression
+	// Eval expression
 	expr->code(s);
 	// Get the location(in terms of register).
 	ObjectLocation* obj_loc = env.lookup(name);
@@ -1197,120 +1196,119 @@ void assign_class::code(ostream &s) {
 // An helper function for dispatch
 // type_name is of use only when it's non-static dispatch
 void dispatch_common(Expression& expr, Symbol * type_name, Symbol& name, Expressions& actual,
-                     char * filename, int line_num, bool is_static_dispatch, ostream &s){
-    if (cgen_debug)  s << "# dispatch_common called" << endl;
+					 char * filename, int line_num, bool is_static_dispatch, ostream &s){
+	if (cgen_debug)  s << "# dispatch_common called" << endl;
 
 
 	if (cgen_debug)  s << "# creating new label" << endl;
-    // create new label
-    int label_exec = newLabel();
+	// create new label
+	int label_exec = newLabel();
 
-    // deal with all args and push to stack (a1-aN)
-    for (int i = 0; i < actual->len(); i++){
-        Expression arg = actual->nth(i);
-        // eval the arg and push to stack
-        arg->code(s);
-        emit_push(ACC,s);
-    }
+	// deal with all args and push to stack (a1-aN)
+	for (int i = 0; i < actual->len(); i++){
+		Expression arg = actual->nth(i);
+		// eval the arg and push to stack
+		arg->code(s);
+		emit_push(ACC,s);
+	}
 
-    // the first parameter is the object itself
-    if (cgen_debug)  s << "# generating code for object_id: " << expr->get_type() << endl;
-    if (expr->get_type() == SELF_TYPE) {
-        // move s0 to a0 (as the first parameter)
-        emit_move(ACC, SELF, s);
-    }
-    else{
-        // eval the attr name, the attr get loaded to $a0 automatically
-        expr->code(s);
-    }
+	// the first parameter is the object itself
+	if (cgen_debug)  s << "# generating code for object_id: " << expr->get_type() << endl;
+	if (expr->get_type() == SELF_TYPE) {
+		// move s0 to a0 (as the first parameter)
+		emit_move(ACC, SELF, s);
+	}
+	else{
+		// eval the attr name, the attr get loaded to $a0 automatically
+		expr->code(s);
+	}
 
-    if (cgen_debug)  s << "# abort on error" << endl;
-    // Abort
-    // if a0 is $0, abort and call dispatch_abort
-    emit_bne(ACC,ZERO,label_exec,s);
-    // load filename
-    StringEntry * fname = stringtable.lookup_string(filename);
-    emit_partial_load_address(ACC,s);
-    fname->code_ref(s);
-    s << endl;
-    // T1 is the line number
-    emit_load_imm(T1,line_num,s);
-    emit_jal("_dispatch_abort",s);
+	if (cgen_debug)  s << "# abort on error" << endl;
+	// Abort
+	// if a0 is $0, abort and call dispatch_abort
+	emit_bne(ACC,ZERO,label_exec,s);
+	// load filename
+	StringEntry * fname = stringtable.lookup_string(filename);
+	emit_partial_load_address(ACC,s);
+	fname->code_ref(s);
+	s << endl;
+	// T1 is the line number
+	emit_load_imm(T1,line_num,s);
+	emit_jal("_dispatch_abort",s);
 
-    if (cgen_debug)  s << "# exec dispatched table" << endl;
-    // Valid: preceed to exec
-    emit_label_def(label_exec,s);
+	if (cgen_debug)  s << "# exec dispatched table" << endl;
+	// Valid: preceed to exec
+	emit_label_def(label_exec,s);
 
-    // get the dispatch table of object at $a0
-    if (is_static_dispatch){
-        emit_partial_load_address(T1,s);
-        emit_disptable_ref(*type_name,s);
-        s << endl;
-    }
-    else {
-        emit_load(T1, 2, ACC, s);
-    }
+	// get the dispatch table of object at $a0
+	if (is_static_dispatch){
+		emit_partial_load_address(T1,s);
+		emit_disptable_ref(*type_name,s);
+		s << endl;
+	}
+	else {
+		emit_load(T1, 2, ACC, s);
+	}
 
-    // get the function offset
-    int func_offset = 0;
+	// get the function offset
+	int func_offset = 0;
 
-    std::map<Symbol, Method> method_map;
-    // get the dispatch table for object
-    if (is_static_dispatch){
-        method_map = class_map[*type_name]->getMethodMap();
-    }
-    else {
-        Symbol object_name = expr->get_type();
-        if (object_name == SELF_TYPE) {
-            method_map = cur_class->getMethodMap();
-        } else {
-            method_map = class_map[object_name]->getMethodMap();
-        }
-    }
+	std::map<Symbol, Method> method_map;
+	// get the dispatch table for object
+	if (is_static_dispatch){
+		method_map = class_map[*type_name]->getMethodMap();
+	}
+	else {
+		Symbol object_name = expr->get_type();
+		if (object_name == SELF_TYPE) {
+			method_map = cur_class->getMethodMap();
+		} else {
+			method_map = class_map[object_name]->getMethodMap();
+		}
+	}
 
-    // search for the target function in the dispatch table
-    for (std::map<Symbol, Method>::const_iterator iter = method_map.begin();
-         iter != method_map.end();
-         ++iter){
-        if (iter->first == name){
-            break;
-        }
-        func_offset ++;
-    }
-    emit_load(T1,func_offset,T1,s);
+	// search for the target function in the dispatch table
+	for (std::map<Symbol, Method>::const_iterator iter = method_map.begin();
+		 iter != method_map.end();
+		 ++iter){
+		if (iter->first == name){
+			break;
+		}
+		func_offset ++;
+	}
+	emit_load(T1,func_offset,T1,s);
 
-    // jalr
-    emit_jalr(T1,s);
+	// jalr
+	emit_jalr(T1,s);
 }
 
 void static_dispatch_class::code(ostream &s) {
     if (cgen_debug)     s << "# encoding static dispatch" << endl;
 
-    char * filename = cur_class->get_filename()->get_string();
-    dispatch_common(expr, &type_name,name,actual,filename,this->get_line_number(),true,s);
-    if (cgen_debug)     s << "# [DONE] encoding static dispatch" << endl;
+	char * filename = cur_class->get_filename()->get_string();
+	dispatch_common(expr, &type_name,name,actual,filename,this->get_line_number(),true,s);
 }
 
 void dispatch_class::code(ostream &s) {
-    if (cgen_debug)     s << "# encoding dispatch (dynamic)" << endl;
+	if (cgen_debug) s << "# dispatch called" << endl;
 
-    char * filename = cur_class->get_filename()->get_string();
-    dispatch_common(expr,NULL,name,actual,filename,this->get_line_number(),false,s);
-    if (cgen_debug)     s << "# [DONE] encoding dispatch (dynamic)" << endl;
+	char * filename = cur_class->get_filename()->get_string();
+	dispatch_common(expr,NULL,name,actual,filename,this->get_line_number(),false,s);
+
 }
 
 void cond_class::code(ostream &s) {
-    if (cgen_debug)     s << "# encoding cond_class" << endl;
-	int label_then = newLabel();
 	int label_else = newLabel();
+	int label_endif = newLabel();
 
 	pred->code(s);
 	emit_load_bool(T1, falsebool, s);
 	emit_beq(ACC, T1, label_else, s);
-	DEF_LABEL(label_then);
 		then_exp->code(s);
+		emit_branch(label_endif, s);
 	DEF_LABEL(label_else);
 		else_exp->code(s);
+	DEF_LABEL(label_endif);
 }
 
 void loop_class::code(ostream &s) {
@@ -1380,8 +1378,6 @@ void typcase_class::code(ostream &s) {
 	emit_jal("_case_abort", s);
 
 	DEF_LABEL(label_endcase);
-	emit_pop(s);
-
 	local_var_cnt --;
 	emit_pop(s);
 }
@@ -1436,9 +1432,6 @@ void let_class::code(ostream &s) {
 	env.exitscope();
 }
 
-// TODO: check that all temp register is not using ACC (it's for argu only)
-// TODO: check that all loading object attr is loading from s0
-
 // Notice that arith are based on Int type and thus need to
 // use fetch int.
 void arith_common(Expression e1, Expression e2, ostream& s){
@@ -1452,9 +1445,10 @@ void arith_common(Expression e1, Expression e2, ostream& s){
 	e2->code(s);
 	emit_copy(s);
 	// Take e2.
-	emit_move(T2, ACC, s);
+	emit_fetch_int(T2, ACC, s);
 	// Take e1
 	emit_pop(T1, s);
+	emit_fetch_int(T1, T1, s);
 	local_var_cnt--;
 }
 
@@ -1489,13 +1483,13 @@ void divide_class::code(ostream &s) {
 // Negate.
 void neg_class::code(ostream &s) {
 	// eval e1: get int object
-    e1->code(s);
+	e1->code(s);
 	emit_copy(s);
 	// load value of int object
-    emit_load(T1, 3, ACC, s);
-    emit_neg(T1, T1, s);
-    // store value back
-    emit_store_int(T1, ACC, s);
+	emit_load(T1, 3, ACC, s);
+	emit_neg(T1, T1, s);
+	// store value back
+	emit_store_int(T1, ACC, s);
 }
 
 // Not
@@ -1516,9 +1510,9 @@ void lessThanCommon(Expression e1, Expression e2, ostream& s, const bool eq){
 	// eval e1, e2 and store to t1 t2
 	arith_common(e1, e2, s);
 	if (eq){
-        emit_bleq(T1, T2, label_isles, s);
+		emit_bleq(T1, T2, label_isles, s);
 	} else {
-        emit_blt(T1, T2, label_isles, s);
+		emit_blt(T1, T2, label_isles, s);
 	}
 	// Else branch.
 	emit_load_bool(ACC, falsebool, s);
@@ -1623,12 +1617,12 @@ void isvoid_class::code(ostream &s) {
 	int label_endif = newLabel();
 
 	e1->code(s);
-	emit_beqz(ACC, label_isvod, s);
-	emit_load_bool(ACC, falsebool, s);
-	emit_branch(label_endif, s);
+	emit_beq(ACC, ZERO, label_isvod, s);
+		emit_load_bool(ACC, falsebool, s);
+		emit_branch(label_endif, s);
 	
 	DEF_LABEL(label_isvod);
-	emit_load_bool(ACC, truebool, s);
+		emit_load_bool(ACC, truebool, s);
 
 	DEF_LABEL(label_endif);
 }
@@ -1645,7 +1639,7 @@ void object_class::code(ostream &s) {
 	ObjectLocation * loc = env.lookup(name);
 
 	// move the attr to a0
-    emit_load(ACC,loc->getOffset(), loc->getReg(), s);
+	emit_load(ACC,loc->getOffset(), loc->getReg(), s);
 }
 
 
