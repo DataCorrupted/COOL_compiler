@@ -32,7 +32,7 @@ extern int cgen_debug;
 
 int local_var_cnt = 1;
 SymbolTable<Symbol, ObjectLocation> env;
-const CgenNode* cur_class;
+CgenNode* cur_class;
 
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
@@ -1044,7 +1044,7 @@ void CgenNode::codeObjectInit(ostream& str) const{
 	emitCalleeReturn(0, str);
 	
 }
-void CgenNode::codeClassMethod(ostream& str) const{
+void CgenNode::codeClassMethod(ostream& str){
 	// We don't generate code for primitive type.
 	if (name == Object || 
 	  name == Str || name == Int || name == Bool ||
@@ -1208,14 +1208,13 @@ void dispatch_class::code(ostream &s) {
 	// Abort
 	// if a0 is $0, abort and call dispatch_abort
     emit_bne(ACC,ZERO,label_exec,s);
-    // load error message
-    // TODO(jianxiong): what's the predefined filename...
-    StringEntry * err_msg = stringtable.lookup_string("");
+    // load filename
+	StringEntry * fname = stringtable.lookup_string(cur_class->get_filename()->get_string());
     emit_partial_load_address(ACC,s);
-    err_msg->code_ref(s);
+	fname->code_ref(s);
     s << endl;
-    // TODO: this is wrong... syscall 9
-    emit_load_imm(T1,9,s);
+    // T1 is the line number
+    emit_load_imm(T1,this->get_line_number(),s);
     emit_jal("_dispatch_abort",s);
 
     // Valid: preceed to exec

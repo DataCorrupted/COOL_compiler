@@ -85,7 +85,7 @@ public:
 	// Generate a proto tpye code for this object.
 	void codeProtoTypeObj(ostream&) const;
 	void codeObjectInit(ostream&) const;
-	void codeClassMethod(ostream&) const;
+	void codeClassMethod(ostream&);
 	const std::map<Symbol, Method>& getMethodMap() const { return method_map_; }
 	const std::vector<Attribute>& getAttrVec() const { return attr_vec_; }
 
