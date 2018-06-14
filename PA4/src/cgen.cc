@@ -1529,7 +1529,7 @@ void object_class::code(ostream &s) {
 	ObjectLocation * loc = env.lookup(name);
 
 	// move the attr to a0
-    emit_load(ACC,loc->getOffset(),SELF,s);
+    emit_load(ACC,loc->getOffset(), loc->getReg(), s);
 }
 
 
