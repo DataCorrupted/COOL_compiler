@@ -327,7 +327,10 @@ static void emit_push(char *reg, ostream& str) {
 static void emit_pop(ostream& str){
 	emit_addiu(SP, SP, 4, str);
 }
-
+static void emit_pop(char* reg, ostream& str){
+	emit_load(reg, 1, SP, str);
+	emit_addiu(SP, SP, 4, str);
+}
 //
 // Fetch the integer value in an Int object.
 // Emits code to fetch the integer value of the Integer object pointed
@@ -1341,11 +1344,9 @@ void arith_common(Expression e1, Expression e2, ostream& s){
     emit_push(ACC, s);
 	emit_copy(s);
 	// Take e2.
-	emit_load(T2, 1, SP, s);
-	emit_pop(s);
+	emit_pop(T2, s);
 	// Take e1
-    emit_load(T1, 1, SP, s);
-    emit_pop(s);
+	emit_pop(T1, s);
 	local_var_cnt--;
 }
 
@@ -1437,8 +1438,7 @@ void eq_class::code(ostream &s) {
 	e2->code(s);
 	local_var_cnt --;
 
-	emit_load(T1, 1, SP, s);
-	emit_addiu(SP, SP, WORD_SIZE, s);
+	emit_pop(T1, s);
 	emit_move(T2, ACC, s);
 	
 	// See this usage of function equality_test in 
@@ -1485,8 +1485,7 @@ void new__class::code(ostream &s) {
 		emit_load(ACC, 0, T2, s);
 		emit_copy(s);
 		// Load table address.
-		emit_load(T2, 1, SP, s);
-		emit_pop(s);
+		emit_pop(T2, s);
 		// Load init address.
 		emit_load(T2, 1, T2, s);
 		// Init.
