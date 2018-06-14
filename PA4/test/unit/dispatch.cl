@@ -5,7 +5,11 @@ class Main{
 		1
 	};
 
+	bar(x: Bool, y:Int): Int{
+		1
+	};
+
 	main(): Int{{
-		self.foo(true, 1);
+		self.main();
 	}};
 };
