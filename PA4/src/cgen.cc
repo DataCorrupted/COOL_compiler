@@ -1477,6 +1477,7 @@ void typcase_class::code(ostream &s) {
 		local_var_cnt --;
 		env.exitscope();
 	}
+    DEF_LABEL(label_next);
 	// No match found.
 	emit_load(ACC, 1, SP, s);
 	emit_jal("_case_abort", s);
