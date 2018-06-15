@@ -1428,6 +1428,8 @@ void typcase_class::code(ostream &s) {
 	int label_notvoid = newLabel();
 	int label_endcase = newLabel();
 
+	// Get shared parent.
+
 	expr->code(s);
 	// In case of a void match.
 	emit_bne(ACC, ZERO, label_notvoid, s);
@@ -1441,12 +1443,20 @@ void typcase_class::code(ostream &s) {
 	DEF_LABEL(label_notvoid);
 	
 	emit_push(ACC, s);
-	local_var_cnt ++;
+	
 
 	int label_next = newLabel();
 	int label_curr = -1;
 	for (int i=cases->first(); cases->more(i); i = cases->next(i)){
 		Case c = cases->nth(i);
+
+		env.enterscope();
+		env.addid(
+			c->getName(),							// Key
+			new ObjectLocation(
+				FP, -local_var_cnt, c->getType()) 	// Value
+		);
+		local_var_cnt ++;
 
 		// Prepare label.
 		label_curr = label_next;
@@ -1463,13 +1473,15 @@ void typcase_class::code(ostream &s) {
 		// This is a match.
 		c->getExpr()->code(s);
 		emit_branch(label_endcase, s);
+
+		local_var_cnt --;
+		env.exitscope();
 	}
 	// No match found.
 	emit_load(ACC, 1, SP, s);
 	emit_jal("_case_abort", s);
 
 	DEF_LABEL(label_endcase);
-	local_var_cnt --;
 	emit_pop(s);
 }
 
