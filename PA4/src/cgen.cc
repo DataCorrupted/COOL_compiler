@@ -30,10 +30,6 @@
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
 
-int local_var_cnt = 1;
-SymbolTable<Symbol, ObjectLocation> env;
-CgenNode* cur_class;
-std::map<Symbol, CgenNodeP> class_map;
 
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
@@ -122,6 +118,54 @@ static char *gc_collect_names[] =
 //  on the two booleans, which are given global names here.
 BoolConst falsebool(FALSE);
 BoolConst truebool(TRUE);
+
+//*********************************************************
+//
+// Define global constants used in C++
+//
+//*********************************************************
+int local_var_cnt = 1;
+SymbolTable<Symbol, ObjectLocation> env;
+CgenNode* cur_class;
+std::map<Symbol, CgenNodeP> class_map;
+
+// Get inheritance link.
+const std::deque<Symbol> getInherDQ(Symbol curr) {
+	std::deque<Symbol> inher_vec;
+	inher_vec.push_front(curr);
+	while (curr != Object){
+		curr = class_map[curr]->get_parentnd()->getName();
+		inher_vec.push_front(curr);
+	}
+	return inher_vec;
+}
+// Find shared parent for two class.
+const Symbol getSharedParent(const Symbol a, const Symbol b) {
+	std::deque<Symbol> a_path = getInherDQ(a);
+	std::deque<Symbol> b_path = getInherDQ(b);
+
+	unsigned int i = 0;
+	while (
+	  i+1 < a_path.size() && 
+	  i+1 < b_path.size() && 
+	  a_path[i+1] == b_path[i+1]){
+		i++;
+	}
+	return a_path[i];
+}
+// Find shared parent for a vector of classes.
+const Symbol getSharedParent(const std::vector<Symbol> vec){
+	Symbol sum = vec[0];
+	for (int i=1; i<vec.size(); i++){
+		sum = getSharedParent(sum, vec[i]);
+		// Reached the end. No need for further purching.
+		if (sum == Object){
+			return sum;
+		}
+	}
+	return sum;
+}
+
 
 //*********************************************************
 //
