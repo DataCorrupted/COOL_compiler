@@ -16,7 +16,7 @@ cool-support is provided by CS143, yet it contains some important files that you
 
 ## Cool example testing status:
 
-	arith.cl	: core dumped. Failed to generate valid code.
+	arith.cl	: Illegal COOL program.
 	atoi.cl		: Main not defined.
 	atoi_test.cl	: Illegal COOL program.
 	book_list.cl	: Invalid assembly code.
@@ -27,7 +27,7 @@ cool-support is provided by CS143, yet it contains some important files that you
 	hairyscary.cl	: core dumped. Failed to generate valid code.
 	hello_world.cl	: passed.
 	io.cl		: passed.
-	lam.cl		: core dumped. Failed to generate valid code.
+	lam.cl		: Illegal COOL program.
 	life.cl		: passed.
 	list.cl		: passed.
 	new_complex.cl	: passed.
