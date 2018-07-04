@@ -32,12 +32,27 @@ cool-support is provided by CS143, yet it contains some important files that you
 # Final grade
 
 You can find the test cases we used in _test/public_testcases_.
-I got the following wrong.
+I got the following result.
 
-	bothcomments 				mixing the two types of comments
-	endcomment				The end comment token by itself
-	escapednull 				escaped null char in a string
-	longstring_escapedbackslashes		long strings with escaped characters
-	pathologicalstrings			some pathological strings
-	s32					end of comment without start
-	wq0607-c2				sequences of block comments and strings
+	Your score is 92/100
+	28/31 for public testcases
+	54/60 for private testcases
+	 5/5  for flex features
+	 5/5  for comments
+
+	Public testcases result:
+		-0.5 (bothcomments)	 mixing the two types of comments
+		-0.5 (endcomment)	 the end comment token by itself
+		-0.5 (escapednull)	 escaped null char in a string
+		-0.5 (longstring_escapedbackslashes)	 long strings with escaped characters
+		-0.5 (pathologicalstrings)	 some pathological strings
+		-0.5 (s32)	 end of comment without start
+		-0.5 (wq0607-c2)	 sequences of block comments and strings
+
+
+	Private testcases result: 
+		-2 (lextestc3.test) spotcheck for comment errors. the EOF in comment error may be listed as on line 2 or 3. 
+		-2 (lextests5.test) spotcheck for string length when last char is escaped. 
+		-2 (lextests2.test) spotcheck for string length. 
+	 
+	Score for this problem: 92.0

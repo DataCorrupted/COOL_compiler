@@ -31,3 +31,15 @@ The environment for these two scripts should be in _PA3/_, or they may not work.
 
 cool-support is provided by CS143, yet it contains some important files that you should really read and understand.
 
+# Final grade & Bugs
+
+	failed on selfinformalparameter.test ( Self as name of a formal parameter (illegal)) 
+	failed on caseidenticalbranch.test ( Duplicate branch in a case expr) 
+	failed on badstaticdispatch.test ( Bad static dispatch) 
+	failed on letself.test ( Let with self in binding (illegal)) 
+	failed on dupformals.test ( Duplicate name in formal param list) 
+	failed on selftypebadreturn.test ( Non-conforming return type when SELF_TYPE is declared return type) 
+	failed on initwithself.test ( Attribute initialized with self (legal))  [submission crashed on this input]
+	failed on anattributenamedself.test ( An attribute named self) 
+
+	Score for this problem: 89.0

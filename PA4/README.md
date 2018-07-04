@@ -34,3 +34,27 @@ cool-support is provided by CS143, yet it contains some important files that you
 	palindrome.cl	: passed.
 	primes.cl	: core dumped. Failed to generate valid code.
 	sort_list.cl	: passed.
+
+# Final grades & Bugs
+
+There are already many bugs listed above (
+
+The following is the final result.
+
+	Segmentation fault (core dumped)
+	Wrong answer for test:  New SELF_TYPE behavior
+	Segmentation fault (core dumped)
+	Wrong answer for test:  Evaluation order of superclass vs subclass attribute initializers
+	Segmentation fault (core dumped)
+	Wrong answer for test:  Initialization of arguments for a "new"d object
+	Segmentation fault (core dumped)
+	Wrong answer for test:  prime number program from examples directory
+	Segmentation fault (core dumped)
+	Wrong answer for test:  hairy-scary program from examples directory
+	Segmentation fault (core dumped)
+	Wrong answer for test:  Evaluation order of attribute initializers
+	Segmentation fault (core dumped)
+	Wrong answer for test:  Checking evaluation of attribute initialization exprs on a "new"d object
+	Wrong answer for test:  Nested function dispatches
+	
+	Score for this problem: 91.0
